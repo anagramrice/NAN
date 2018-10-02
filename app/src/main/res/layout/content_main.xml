@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  xmlns:tools="http://schemas.android.com/tools"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  app:layout_behavior="@string/appbar_scrolling_view_behavior"
+  tools:context=".MainActivity"
+  tools:showIn="@layout/activity_main">
+
+  <TextView
+    android:id="@+id/status"
+    android:layout_width="201dp"
+    android:layout_height="20dp"
+    android:layout_marginEnd="8dp"
+    android:layout_marginStart="8dp"
+    android:text="this is the status !!"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent" />
+
+  <CheckBox
+    android:id="@+id/haveSession"
+    android:layout_width="373dp"
+    android:layout_height="34dp"
+    android:layout_marginTop="32dp"
+    android:text="Have Session"
+    app:layout_constraintTop_toTopOf="parent"
+    tools:layout_editor_absoluteX="5dp" />
+
+  <EditText
+    android:id="@+id/macAddress"
+    android:layout_width="377dp"
+    android:layout_height="44dp"
+    android:layout_marginTop="16dp"
+    android:ems="10"
+    android:inputType="textPersonName"
+    android:text="Mac"
+    app:layout_constraintTop_toBottomOf="@+id/haveSession"
+    tools:layout_editor_absoluteX="5dp" />
+
+  <Button
+    android:id="@+id/initiatorButton"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="32dp"
+    android:layout_marginTop="32dp"
+    android:text="Initiator"
+    app:layout_constraintStart_toEndOf="@+id/publishButton"
+    app:layout_constraintTop_toBottomOf="@+id/macAddress" />
+
+  <EditText
+    android:id="@+id/otherMac"
+    android:layout_width="374dp"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="32dp"
+    android:ems="10"
+    android:inputType="textPersonName"
+    android:text="Other MAC"
+    app:layout_constraintTop_toBottomOf="@+id/initiatorButton"
+    tools:layout_editor_absoluteX="5dp" />
+
+  <Button
+    android:id="@+id/responderButton"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="32dp"
+    android:layout_marginTop="32dp"
+    android:text="Responder"
+    app:layout_constraintStart_toEndOf="@+id/subscribeButton"
+    app:layout_constraintTop_toBottomOf="@+id/otherMac" />
+
+  <Button
+    android:id="@+id/publishButton"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="32dp"
+    android:layout_marginTop="32dp"
+    android:text="Publish"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toBottomOf="@+id/macAddress" />
+
+  <Button
+    android:id="@+id/subscribeButton"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="32dp"
+    android:layout_marginTop="32dp"
+    android:text="Subscribe"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toBottomOf="@+id/otherMac" />
+</android.support.constraint.ConstraintLayout>
