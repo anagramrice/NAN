@@ -88,4 +88,39 @@
     android:text="Subscribe"
     app:layout_constraintStart_toStartOf="parent"
     app:layout_constraintTop_toBottomOf="@+id/otherMac" />
+
+  <Button
+      android:id="@+id/sendbtn"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="16dp"
+      android:layout_marginTop="32dp"
+      android:text="Send File"
+      app:layout_constraintStart_toEndOf="@+id/IPv6text"
+      app:layout_constraintTop_toBottomOf="@+id/responderButton" />
+
+  <EditText
+      android:id="@+id/IPv6text"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="32dp"
+      android:layout_marginTop="32dp"
+      android:contentDescription="IPv6 addr"
+      android:ems="10"
+      android:hint="ipv6_address"
+      android:inputType="textPersonName"
+      app:layout_constraintStart_toStartOf="parent"
+      app:layout_constraintTop_toBottomOf="@+id/responderButton" />
+
+  <EditText
+      android:id="@+id/msgtext"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginBottom="12dp"
+      android:contentDescription="Messaging"
+      android:ems="10"
+      android:hint="MessageToSend"
+      android:inputType="textPersonName"
+      app:layout_constraintBottom_toBottomOf="parent"
+      tools:layout_editor_absoluteX="129dp" />
 </android.support.constraint.ConstraintLayout>
