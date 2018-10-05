@@ -199,7 +199,7 @@ public class MainActivity extends AppCompatActivity {
                  return;
 
               } else {
-                  Toast.makeText(this, "Permission for audio not granted. NAN can't run.", Toast.LENGTH_LONG).show();
+                  Toast.makeText(this, "Permission for location not granted. NAN can't run.", Toast.LENGTH_LONG).show();
                   finish();
                   // The permission was denied, so we can show a message why we can't run the app
                   // and then close the app.
@@ -254,6 +254,7 @@ public class MainActivity extends AppCompatActivity {
       @Override
       public void onLinkPropertiesChanged(Network network, LinkProperties linkProperties) {
         super.onLinkPropertiesChanged(network, linkProperties);
+        //TODO: create socketServer on different thread to transfer files
       }
     });
   }
@@ -522,4 +523,6 @@ public class MainActivity extends AppCompatActivity {
     EditText editText = (EditText)findViewById(R.id.otherMac);
     editText.setText(macAddress);
   }
+
+  //TODO: Create another EditText to transfer ipV6 address for file transfer
 }
