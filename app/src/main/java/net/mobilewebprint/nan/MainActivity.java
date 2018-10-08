@@ -39,10 +39,16 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
+import java.net.SocketException;
+import java.net.InetAddress;
+import java.net.Inet6Address;
+import java.net.NetworkInterface;
+import java.net.Socket;
+import java.net.ServerSocket;
+import java.util.Enumeration;
+import java.util.List;
 import android.util.Log;
 import android.widget.Toast;
-import java.util.List;
-
 
 /*
  * Note: as it stands, to run, do the following:
@@ -71,6 +77,7 @@ public class MainActivity extends AppCompatActivity {
   private PublishDiscoverySession   publishDiscoverySession;
   private SubscribeDiscoverySession subscribeDiscoverySession;
   private PeerHandle                peerHandle;
+  private Inet6Address              ipv6;
 
   private byte[]                    myMac;
   private byte[]                    otherMac;
@@ -98,12 +105,19 @@ public class MainActivity extends AppCompatActivity {
     Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
     setSupportActionBar(toolbar);
 
-    FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+    FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.sendmsgfab);
     fab.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View view) {
-        Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-            .setAction("Action", null).show();
+
+        if (publishDiscoverySession != null && peerHandle != null) {
+          publishDiscoverySession.sendMessage(peerHandle, MAC_ADDRESS_MESSAGE, myMac);
+          Snackbar.make(view, "Sent Message to other phone", Snackbar.LENGTH_LONG)
+                  .setAction("Action", null).show();
+        } else{
+          Snackbar.make(view, "no session or peerhandle", Snackbar.LENGTH_LONG)
+                  .setAction("Action", null).show();
+        }
       }
     });
 
@@ -127,7 +141,9 @@ public class MainActivity extends AppCompatActivity {
     initiatorButton.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
+
         networkSpecifier = wifiAwareSession.createNetworkSpecifierOpen(WifiAwareManager.WIFI_AWARE_DATA_PATH_ROLE_INITIATOR, otherMac);
+        //networkSpecifier = wifiAwareSession.createNetworkSpecifierOpen(peerHandle);
         requestNetwork();
       }
     });
@@ -137,7 +153,16 @@ public class MainActivity extends AppCompatActivity {
       @Override
       public void onClick(View v) {
         networkSpecifier = wifiAwareSession.createNetworkSpecifierOpen(WifiAwareManager.WIFI_AWARE_DATA_PATH_ROLE_RESPONDER, otherMac);
+        //networkSpecifier = wifiAwareSession.createNetworkSpecifierOpen(WifiAwareManager.WIFI_AWARE_DATA_PATH_ROLE_RESPONDER);
         requestNetwork();
+      }
+    });
+
+    Button sendFileButton = (Button)findViewById(R.id.sendbtn);
+    sendFileButton.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        Toast.makeText(MainActivity.this, "Sending file <not yet implemented.>", Toast.LENGTH_LONG).show();
       }
     });
 
@@ -176,7 +201,7 @@ public class MainActivity extends AppCompatActivity {
    * App Permissions for Coarse Location
    **/
   private void setupPermissions() {
-      // If we don't have the record audio permission...
+      // If we don't have the record network permission...
       if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
           // And if we're on SDK M or later...
           if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -195,7 +220,6 @@ public class MainActivity extends AppCompatActivity {
               // If request is cancelled, the result arrays are empty.
               if (grantResults.length > 0
                       && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                  // The permission was granted! Start up the visualizer!
                  return;
 
               } else {
@@ -255,6 +279,44 @@ public class MainActivity extends AppCompatActivity {
       public void onLinkPropertiesChanged(Network network, LinkProperties linkProperties) {
         super.onLinkPropertiesChanged(network, linkProperties);
         //TODO: create socketServer on different thread to transfer files
+        Log.d("myTag", "entering linkPropertiesChanged ");
+        try {
+          Log.d("myTag", "iface name: " + linkProperties.getInterfaceName());
+          NetworkInterface awareNi = NetworkInterface.getByName(
+                  linkProperties.getInterfaceName());
+          //Inet6Address ipv6 = null;
+          Enumeration<InetAddress> Addresses = awareNi.getInetAddresses();
+          while (Addresses.hasMoreElements()) {
+            InetAddress addr = Addresses.nextElement();
+            if (addr instanceof Inet6Address) {
+              Log.d("myTag", "netinterface ipv6 address: " + addr.toString());
+              if (((Inet6Address) addr).isLinkLocalAddress()) {
+                ipv6 = (Inet6Address) addr;
+                //TODO: need to send this address via messages to other device
+                break;
+              }
+            }
+          }
+        }
+        catch (SocketException e) {
+          Log.d("myTag", "socket exception " + e.toString());
+        }
+        catch (Exception e) {
+          //EXCEPTION!!! java.lang.NullPointerException: Attempt to invoke virtual method 'java.util.Enumeration java.net.NetworkInterface.getInetAddresses()' on a null object reference
+          Log.d("myTag", "EXCEPTION!!! " + e.toString());
+        }
+
+        // should be done in a separate thread
+        /*
+        ServerSocket ss = new ServerSocket(0, 5, ipv6);
+        int port = ss.getLocalPort();    */
+        //TODO: need to send this port via messages to other device to finish client conn info
+
+        // should be done in a separate thread
+        // obtain server IPv6 and port number out-of-band
+        //TODO: Retrieve address:port IPv6 before this client thread can be created
+        /*
+        Socket cs = network.getSocketFactory().createSocket(serverIpv6, serverPort);  */
       }
     });
   }
@@ -272,7 +334,7 @@ public class MainActivity extends AppCompatActivity {
     Log.d("myTag", "This is my message build" + Build.VERSION.SDK_INT +"\t"+ Build.VERSION_CODES.O);
     Log.d("myTag","Supported Aware: " + getPackageManager().hasSystemFeature(PackageManager.FEATURE_WIFI_AWARE));
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        Log.d("myTag", "This is section is executed");
+        Log.d("myTag", "Entering OnResume is executed");
         IntentFilter filter   = new IntentFilter(WifiAwareManager.ACTION_WIFI_AWARE_STATE_CHANGED);
         broadcastReceiver     = new BroadcastReceiver() {
           @Override
@@ -428,6 +490,7 @@ public class MainActivity extends AppCompatActivity {
       public void onMessageReceived(PeerHandle peerHandle, byte[] message) {
         super.onMessageReceived(peerHandle, message);
         setOtherMacAddress(message);
+        //TODO: set message on the phone from msg received
       }
     }, null);
   }

@@ -14,29 +14,31 @@
     android:layout_height="20dp"
     android:layout_marginEnd="8dp"
     android:layout_marginStart="8dp"
-    android:text="this is the status !!"
+    android:text="@string/this_is_the_status"
     app:layout_constraintEnd_toEndOf="parent"
     app:layout_constraintStart_toStartOf="parent" />
 
   <CheckBox
-    android:id="@+id/haveSession"
-    android:layout_width="373dp"
-    android:layout_height="34dp"
-    android:layout_marginTop="32dp"
-    android:text="Have Session"
-    app:layout_constraintTop_toTopOf="parent"
-    tools:layout_editor_absoluteX="5dp" />
+      android:id="@+id/haveSession"
+      android:layout_width="373dp"
+      android:layout_height="34dp"
+      android:layout_marginStart="5dp"
+      android:layout_marginTop="32dp"
+      android:text="@string/have_session"
+      app:layout_constraintStart_toStartOf="parent"
+      app:layout_constraintTop_toTopOf="parent" />
 
   <EditText
-    android:id="@+id/macAddress"
-    android:layout_width="377dp"
-    android:layout_height="44dp"
-    android:layout_marginTop="16dp"
-    android:ems="10"
-    android:inputType="textPersonName"
-    android:text="Mac"
-    app:layout_constraintTop_toBottomOf="@+id/haveSession"
-    tools:layout_editor_absoluteX="5dp" />
+      android:id="@+id/macAddress"
+      android:layout_width="377dp"
+      android:layout_height="44dp"
+      android:layout_marginStart="5dp"
+      android:layout_marginTop="16dp"
+      android:ems="10"
+      android:inputType="textPersonName"
+      android:text="@string/mac"
+      app:layout_constraintStart_toStartOf="parent"
+      app:layout_constraintTop_toBottomOf="@+id/haveSession" />
 
   <Button
     android:id="@+id/initiatorButton"
@@ -44,20 +46,21 @@
     android:layout_height="wrap_content"
     android:layout_marginStart="32dp"
     android:layout_marginTop="32dp"
-    android:text="Initiator"
+    android:text="@string/initiator"
     app:layout_constraintStart_toEndOf="@+id/publishButton"
     app:layout_constraintTop_toBottomOf="@+id/macAddress" />
 
   <EditText
-    android:id="@+id/otherMac"
-    android:layout_width="374dp"
-    android:layout_height="wrap_content"
-    android:layout_marginTop="32dp"
-    android:ems="10"
-    android:inputType="textPersonName"
-    android:text="Other MAC"
-    app:layout_constraintTop_toBottomOf="@+id/initiatorButton"
-    tools:layout_editor_absoluteX="5dp" />
+      android:id="@+id/otherMac"
+      android:layout_width="374dp"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="5dp"
+      android:layout_marginTop="32dp"
+      android:ems="10"
+      android:inputType="textPersonName"
+      android:text="@string/other_mac"
+      app:layout_constraintStart_toStartOf="parent"
+      app:layout_constraintTop_toBottomOf="@+id/initiatorButton" />
 
   <Button
     android:id="@+id/responderButton"
@@ -65,7 +68,7 @@
     android:layout_height="wrap_content"
     android:layout_marginStart="32dp"
     android:layout_marginTop="32dp"
-    android:text="Responder"
+    android:text="@string/responder"
     app:layout_constraintStart_toEndOf="@+id/subscribeButton"
     app:layout_constraintTop_toBottomOf="@+id/otherMac" />
 
@@ -75,7 +78,7 @@
     android:layout_height="wrap_content"
     android:layout_marginStart="32dp"
     android:layout_marginTop="32dp"
-    android:text="Publish"
+    android:text="@string/publish"
     app:layout_constraintStart_toStartOf="parent"
     app:layout_constraintTop_toBottomOf="@+id/macAddress" />
 
@@ -85,7 +88,7 @@
     android:layout_height="wrap_content"
     android:layout_marginStart="32dp"
     android:layout_marginTop="32dp"
-    android:text="Subscribe"
+    android:text="@string/subscribe"
     app:layout_constraintStart_toStartOf="parent"
     app:layout_constraintTop_toBottomOf="@+id/otherMac" />
 
@@ -95,7 +98,7 @@
       android:layout_height="wrap_content"
       android:layout_marginStart="16dp"
       android:layout_marginTop="32dp"
-      android:text="Send File"
+      android:text="@string/send_file"
       app:layout_constraintStart_toEndOf="@+id/IPv6text"
       app:layout_constraintTop_toBottomOf="@+id/responderButton" />
 
@@ -105,22 +108,23 @@
       android:layout_height="wrap_content"
       android:layout_marginStart="32dp"
       android:layout_marginTop="32dp"
-      android:contentDescription="IPv6 addr"
+      android:allowUndo="false"
       android:ems="10"
-      android:hint="ipv6_address"
+      android:hint="@string/ipv6_address"
       android:inputType="textPersonName"
       app:layout_constraintStart_toStartOf="parent"
       app:layout_constraintTop_toBottomOf="@+id/responderButton" />
 
   <EditText
       android:id="@+id/msgtext"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
+      android:layout_width="343dp"
+      android:layout_height="43dp"
+      android:layout_marginStart="5dp"
       android:layout_marginBottom="12dp"
-      android:contentDescription="Messaging"
       android:ems="10"
-      android:hint="MessageToSend"
+      android:hint="@string/messagetosend"
+      android:importantForAutofill="no"
       android:inputType="textPersonName"
       app:layout_constraintBottom_toBottomOf="parent"
-      tools:layout_editor_absoluteX="129dp" />
+      app:layout_constraintStart_toStartOf="parent" />
 </android.support.constraint.ConstraintLayout>
