@@ -15,6 +15,7 @@ import android.net.NetworkCapabilities;
 import android.net.NetworkRequest;
 import android.net.NetworkSpecifier;
 import android.net.wifi.aware.AttachCallback;
+import android.net.wifi.aware.DiscoverySession;
 import android.net.wifi.aware.DiscoverySessionCallback;
 import android.net.wifi.aware.IdentityChangedListener;
 import android.net.wifi.aware.PeerHandle;
@@ -56,8 +57,6 @@ import android.widget.Toast;
  * 1. On Pixel #1, run the NAN app, and click the PUBLISH button.
  * 2. On Pixel #2, run the NAN app, and click the SUBSCRIBE button.
  *   -- There is a slight delay. Wait until both have 2 MAC addresses.
- * 3. On Pixel #1, click the INITIATOR button.
- * 4. On Pixel #2, click the RESPONDER button.
  *
  * Unfortunately, requestNetwork does not get any callbacks.
  *
@@ -126,6 +125,7 @@ public class MainActivity extends AppCompatActivity {
       @Override
       public void onClick(View v) {
         publishService();
+        setStatus("NAN available: Device is Publisher \n--> click responder for connection");
       }
     });
 
@@ -134,6 +134,7 @@ public class MainActivity extends AppCompatActivity {
       @Override
       public void onClick(View v) {
         subscribeToService();
+        setStatus("NAN available: Device is Subscriber \n--> click initiator for connection");
       }
     });
 
@@ -142,8 +143,10 @@ public class MainActivity extends AppCompatActivity {
       @Override
       public void onClick(View v) {
 
-        networkSpecifier = wifiAwareSession.createNetworkSpecifierOpen(WifiAwareManager.WIFI_AWARE_DATA_PATH_ROLE_INITIATOR, otherMac);
-        //networkSpecifier = wifiAwareSession.createNetworkSpecifierOpen(peerHandle);
+        //networkSpecifier = wifiAwareSession.createNetworkSpecifierOpen(WifiAwareManager.WIFI_AWARE_DATA_PATH_ROLE_INITIATOR, otherMac);
+        networkSpecifier = subscribeDiscoverySession.createNetworkSpecifierOpen(peerHandle);
+        Log.d("myTag", "Initiator button clicked <subscriber is an initiator>");
+        setStatus("NAN initiator: subscriber networkSpecifier created");
         requestNetwork();
       }
     });
@@ -152,8 +155,10 @@ public class MainActivity extends AppCompatActivity {
     responderButton.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
-        networkSpecifier = wifiAwareSession.createNetworkSpecifierOpen(WifiAwareManager.WIFI_AWARE_DATA_PATH_ROLE_RESPONDER, otherMac);
-        //networkSpecifier = wifiAwareSession.createNetworkSpecifierOpen(WifiAwareManager.WIFI_AWARE_DATA_PATH_ROLE_RESPONDER);
+        //networkSpecifier = wifiAwareSession.createNetworkSpecifierOpen(WifiAwareManager.WIFI_AWARE_DATA_PATH_ROLE_RESPONDER, otherMac);
+        networkSpecifier = publishDiscoverySession.createNetworkSpecifierOpen(peerHandle);
+        Log.d("myTag", "Responder button clicked <publisher is an responder>\"");
+        setStatus("NAN publisher: Responder networkSpecifier created");
         requestNetwork();
       }
     });
@@ -241,6 +246,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     if (networkSpecifier == null) {
+      Log.d("myTag", "No NetworkSpecifier Created ");
       return;
     }
 
@@ -282,9 +288,18 @@ public class MainActivity extends AppCompatActivity {
         Log.d("myTag", "entering linkPropertiesChanged ");
         try {
           Log.d("myTag", "iface name: " + linkProperties.getInterfaceName());
+          Log.d("myTag", "iface link addr: " + linkProperties.getLinkAddresses());
+          Log.d("myTag", "ping6 -I " + linkProperties.getInterfaceName() + " " + linkProperties.getLinkAddresses());
+
           NetworkInterface awareNi = NetworkInterface.getByName(
                   linkProperties.getInterfaceName());
           //Inet6Address ipv6 = null;
+          Enumeration<NetworkInterface> ifcs = NetworkInterface.getNetworkInterfaces();
+          while (ifcs.hasMoreElements()) {
+            NetworkInterface iface = ifcs.nextElement();
+            Log.d("myTag", "iface: " + iface.toString());
+          }
+
           Enumeration<InetAddress> Addresses = awareNi.getInetAddresses();
           while (Addresses.hasMoreElements()) {
             InetAddress addr = Addresses.nextElement();
