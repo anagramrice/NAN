@@ -108,13 +108,18 @@ public class MainActivity extends AppCompatActivity {
     fab.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View view) {
-
         if (publishDiscoverySession != null && peerHandle != null) {
-          publishDiscoverySession.sendMessage(peerHandle, MAC_ADDRESS_MESSAGE, myMac);
-          Snackbar.make(view, "Sent Message to other phone", Snackbar.LENGTH_LONG)
+          //publishDiscoverySession.sendMessage(peerHandle, MAC_ADDRESS_MESSAGE, myMac);
+          Snackbar.make(view, "publisher req met", Snackbar.LENGTH_LONG)
+                  .setAction("Action", null).show();
+        } else if(subscribeDiscoverySession != null && peerHandle != null) {
+          Snackbar.make(view, "subscriber req met", Snackbar.LENGTH_LONG)
+                  .setAction("Action", null).show();
+        } else if(peerHandle == null) {
+          Snackbar.make(view, "no peerHandle", Snackbar.LENGTH_LONG)
                   .setAction("Action", null).show();
         } else{
-          Snackbar.make(view, "no session or peerhandle", Snackbar.LENGTH_LONG)
+          Snackbar.make(view, "no DiscoverySession", Snackbar.LENGTH_LONG)
                   .setAction("Action", null).show();
         }
       }
@@ -285,6 +290,7 @@ public class MainActivity extends AppCompatActivity {
       public void onLinkPropertiesChanged(Network network, LinkProperties linkProperties) {
         super.onLinkPropertiesChanged(network, linkProperties);
         //TODO: create socketServer on different thread to transfer files
+        Toast.makeText(MainActivity.this, "onLinkPropertiesChanged", Toast.LENGTH_LONG).show();
         Log.d("myTag", "entering linkPropertiesChanged ");
         try {
           Log.d("myTag", "iface name: " + linkProperties.getInterfaceName());
@@ -293,12 +299,12 @@ public class MainActivity extends AppCompatActivity {
 
           NetworkInterface awareNi = NetworkInterface.getByName(
                   linkProperties.getInterfaceName());
-          //Inet6Address ipv6 = null;
+          /*Inet6Address ipv6 = null;
           Enumeration<NetworkInterface> ifcs = NetworkInterface.getNetworkInterfaces();
           while (ifcs.hasMoreElements()) {
             NetworkInterface iface = ifcs.nextElement();
             Log.d("myTag", "iface: " + iface.toString());
-          }
+          }*/
 
           Enumeration<InetAddress> Addresses = awareNi.getInetAddresses();
           while (Addresses.hasMoreElements()) {
