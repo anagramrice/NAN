@@ -33,6 +33,7 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -40,16 +41,20 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
+import java.lang.Thread;
+import java.lang.Runnable;
 import java.net.SocketException;
 import java.net.InetAddress;
 import java.net.Inet6Address;
 import java.net.NetworkInterface;
 import java.net.Socket;
 import java.net.ServerSocket;
+import java.net.UnknownHostException;
 import java.util.Enumeration;
 import java.util.List;
-import android.util.Log;
-import android.widget.Toast;
+import java.util.regex.*;
+
 
 /*
  * Note: as it stands, to run, do the following:
@@ -65,6 +70,7 @@ import android.widget.Toast;
 public class MainActivity extends AppCompatActivity {
 
   private final int                 MAC_ADDRESS_MESSAGE             = 55;
+  private final int                 IP_ADDRESS_MESSAGE             = 33;
   private static final int          MY_PERMISSION_COARSE_LOCATION_REQUEST_CODE = 88;
   private final String              THE_MAC                         = "THEMAC";
 
@@ -80,6 +86,8 @@ public class MainActivity extends AppCompatActivity {
 
   private byte[]                    myMac;
   private byte[]                    otherMac;
+  private byte[]                    myIP;
+  private byte[]                    otherIP;
   /**
    * Handles initialization (creation) of the activity.
    *
@@ -293,9 +301,8 @@ public class MainActivity extends AppCompatActivity {
         Toast.makeText(MainActivity.this, "onLinkPropertiesChanged", Toast.LENGTH_LONG).show();
         Log.d("myTag", "entering linkPropertiesChanged ");
         try {
-          Log.d("myTag", "iface name: " + linkProperties.getInterfaceName());
-          Log.d("myTag", "iface link addr: " + linkProperties.getLinkAddresses());
-          Log.d("myTag", "ping6 -I " + linkProperties.getInterfaceName() + " " + linkProperties.getLinkAddresses());
+          //Log.d("myTag", "iface name: " + linkProperties.getInterfaceName());
+          //Log.d("myTag", "iface link addr: " + linkProperties.getLinkAddresses());
 
           NetworkInterface awareNi = NetworkInterface.getByName(
                   linkProperties.getInterfaceName());
@@ -313,6 +320,12 @@ public class MainActivity extends AppCompatActivity {
               Log.d("myTag", "netinterface ipv6 address: " + addr.toString());
               if (((Inet6Address) addr).isLinkLocalAddress()) {
                 ipv6 = (Inet6Address) addr;
+                myIP = addr.getAddress();
+                if (publishDiscoverySession != null && peerHandle != null) {
+                  publishDiscoverySession.sendMessage(peerHandle, IP_ADDRESS_MESSAGE, myIP);
+                } else if(subscribeDiscoverySession != null && peerHandle != null){
+                  subscribeDiscoverySession.sendMessage(peerHandle,IP_ADDRESS_MESSAGE, myIP);
+                }
                 //TODO: need to send this address via messages to other device
                 break;
               }
@@ -463,12 +476,21 @@ public class MainActivity extends AppCompatActivity {
       @Override
       public void onMessageReceived(PeerHandle peerHandle_, byte[] message) {
         super.onMessageReceived(peerHandle, message);
-        setOtherMacAddress(message);
+        if(message.length == 2) {
+          Log.d("myTag", "send port number <not implemented yet>");
+        } else if (message.length == 6){
+          setOtherMacAddress(message);
+        } else if (message.length == 16) {
+          setOtherIPAddress(message);
+        } else if (message.length > 16) {
+          Log.d("myTag", "send message ");
+        }
 
         peerHandle  = peerHandle_;
 
         if (publishDiscoverySession != null && peerHandle != null) {
           publishDiscoverySession.sendMessage(peerHandle, MAC_ADDRESS_MESSAGE, myMac);
+          Toast.makeText(MainActivity.this, "message received", Toast.LENGTH_LONG).show();
         }
       }
     }, null);
@@ -510,7 +532,15 @@ public class MainActivity extends AppCompatActivity {
       @Override
       public void onMessageReceived(PeerHandle peerHandle, byte[] message) {
         super.onMessageReceived(peerHandle, message);
-        setOtherMacAddress(message);
+        if(message.length == 2) {
+          Log.d("myTag", "send port number <not implemented yet>");
+        } else if (message.length == 6){
+          setOtherMacAddress(message);
+        } else if (message.length == 16) {
+          setOtherIPAddress(message);
+        } else if (message.length > 16) {
+          Log.d("myTag", "send message ");
+        }
         //TODO: set message on the phone from msg received
       }
     }, null);
@@ -606,6 +636,16 @@ public class MainActivity extends AppCompatActivity {
     String macAddress = String.format("%02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
     EditText editText = (EditText)findViewById(R.id.otherMac);
     editText.setText(macAddress);
+  }
+  private void setOtherIPAddress(byte[] ip) {
+    otherIP = ip;
+    try {
+      String ipAddr = Inet6Address.getByAddress(otherIP).toString();
+      EditText editText = (EditText) findViewById(R.id.IPv6text);
+      editText.setText(ipAddr);
+    } catch (UnknownHostException e) {
+      Log.d("myTag", "socket exception " + e.toString());
+    }
   }
 
   //TODO: Create another EditText to transfer ipV6 address for file transfer

@@ -14,4 +14,5 @@
   <string name="other_mac">Other MAC</string>
   <string name="messagetosend">MessageToSend</string>
   <string name="messaging">Messaging</string>
+    <string name="close">close</string>
 </resources>
