@@ -20,10 +20,10 @@
 
   <CheckBox
       android:id="@+id/haveSession"
-      android:layout_width="373dp"
-      android:layout_height="34dp"
-      android:layout_marginStart="5dp"
-      android:layout_marginTop="32dp"
+      android:layout_width="234dp"
+      android:layout_height="41dp"
+      android:layout_marginStart="24dp"
+      android:layout_marginTop="64dp"
       android:text="@string/have_session"
       app:layout_constraintStart_toStartOf="parent"
       app:layout_constraintTop_toTopOf="parent" />
@@ -41,14 +41,16 @@
       app:layout_constraintTop_toBottomOf="@+id/haveSession" />
 
   <Button
-    android:id="@+id/responderButton"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_marginStart="32dp"
-    android:layout_marginTop="32dp"
-    android:text="@string/responder"
-    app:layout_constraintStart_toEndOf="@+id/publishButton"
-    app:layout_constraintTop_toBottomOf="@+id/macAddress" />
+      android:id="@+id/responderButton"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="32dp"
+      android:layout_marginTop="32dp"
+      android:enabled="false"
+      android:text="@string/responder"
+      android:visibility="visible"
+      app:layout_constraintStart_toEndOf="@+id/publishButton"
+      app:layout_constraintTop_toBottomOf="@+id/macAddress" />
 
   <EditText
       android:id="@+id/otherMac"
@@ -63,14 +65,16 @@
       app:layout_constraintTop_toBottomOf="@+id/responderButton" />
 
   <Button
-    android:id="@+id/initiatorButton"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_marginStart="32dp"
-    android:layout_marginTop="32dp"
-    android:text="@string/initiator"
-    app:layout_constraintStart_toEndOf="@+id/subscribeButton"
-    app:layout_constraintTop_toBottomOf="@+id/otherMac" />
+      android:id="@+id/initiatorButton"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="32dp"
+      android:layout_marginTop="32dp"
+      android:enabled="false"
+      android:text="@string/initiator"
+      android:visibility="visible"
+      app:layout_constraintStart_toEndOf="@+id/subscribeButton"
+      app:layout_constraintTop_toBottomOf="@+id/otherMac" />
 
   <Button
     android:id="@+id/publishButton"
@@ -127,4 +131,16 @@
       android:inputType="textPersonName"
       app:layout_constraintBottom_toBottomOf="parent"
       app:layout_constraintStart_toStartOf="parent" />
+
+  <Button
+      android:id="@+id/statusbtn"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="8dp"
+      android:layout_marginTop="64dp"
+      android:layout_marginEnd="8dp"
+      android:text="Status"
+      app:layout_constraintEnd_toEndOf="parent"
+      app:layout_constraintStart_toEndOf="@+id/haveSession"
+      app:layout_constraintTop_toTopOf="parent" />
 </android.support.constraint.ConstraintLayout>

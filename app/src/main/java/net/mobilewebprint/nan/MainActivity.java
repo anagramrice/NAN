@@ -71,6 +71,7 @@ public class MainActivity extends AppCompatActivity {
 
   private final int                 MAC_ADDRESS_MESSAGE             = 55;
   private final int                 IP_ADDRESS_MESSAGE             = 33;
+  private final int                 MESSAGE                        = 7;
   private static final int          MY_PERMISSION_COARSE_LOCATION_REQUEST_CODE = 88;
   private final String              THE_MAC                         = "THEMAC";
 
@@ -88,6 +89,7 @@ public class MainActivity extends AppCompatActivity {
   private byte[]                    otherMac;
   private byte[]                    myIP;
   private byte[]                    otherIP;
+  private byte[]                    msgtosend;
   /**
    * Handles initialization (creation) of the activity.
    *
@@ -116,13 +118,34 @@ public class MainActivity extends AppCompatActivity {
     fab.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View view) {
+        String msg= "messageToBeSent: ";
+        EditText editText = (EditText)findViewById(R.id.msgtext);
+        msg += editText.getText().toString();
+        msgtosend = msg.getBytes();
+        if (publishDiscoverySession != null && peerHandle != null) {
+          publishDiscoverySession.sendMessage(peerHandle, MESSAGE, msgtosend);
+        } else if(subscribeDiscoverySession != null && peerHandle != null) {
+          subscribeDiscoverySession.sendMessage(peerHandle, MESSAGE, msgtosend);
+        }
+      }
+    });
+
+    Button statusButton = (Button)findViewById(R.id.statusbtn);
+    statusButton.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View view) {
         if (publishDiscoverySession != null && peerHandle != null) {
           //publishDiscoverySession.sendMessage(peerHandle, MAC_ADDRESS_MESSAGE, myMac);
           Snackbar.make(view, "publisher req met", Snackbar.LENGTH_LONG)
                   .setAction("Action", null).show();
+          Button responderButton = (Button)findViewById(R.id.responderButton);
+          responderButton.setEnabled(true);
+
         } else if(subscribeDiscoverySession != null && peerHandle != null) {
           Snackbar.make(view, "subscriber req met", Snackbar.LENGTH_LONG)
                   .setAction("Action", null).show();
+          Button initiatorButton = (Button)findViewById(R.id.initiatorButton);
+          initiatorButton.setEnabled(true);
         } else if(peerHandle == null) {
           Snackbar.make(view, "no peerHandle", Snackbar.LENGTH_LONG)
                   .setAction("Action", null).show();
@@ -262,16 +285,17 @@ public class MainActivity extends AppCompatActivity {
       Log.d("myTag", "No NetworkSpecifier Created ");
       return;
     }
-
+    Log.d("myTag", "building network interface");
     NetworkRequest networkRequest = new NetworkRequest.Builder()
         .addTransportType(NetworkCapabilities.TRANSPORT_WIFI_AWARE)
         .setNetworkSpecifier(networkSpecifier)
         .build();
-
+    Log.d("myTag", "finish building network interface");
     connectivityManager.requestNetwork(networkRequest, new NetworkCallback(){
       @Override
       public void onAvailable(Network network) {
         super.onAvailable(network);
+        Log.d("myTag", "Network Available: " + network.toString());
       }
 
       @Override
@@ -326,7 +350,6 @@ public class MainActivity extends AppCompatActivity {
                 } else if(subscribeDiscoverySession != null && peerHandle != null){
                   subscribeDiscoverySession.sendMessage(peerHandle,IP_ADDRESS_MESSAGE, myIP);
                 }
-                //TODO: need to send this address via messages to other device
                 break;
               }
             }
@@ -457,11 +480,11 @@ public class MainActivity extends AppCompatActivity {
   private void publishService() {
 
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) { return; }
-
+    Log.d("nanPUBLISH", "building publish session");
     PublishConfig config = new PublishConfig.Builder()
         .setServiceName(THE_MAC)
         .build();
-
+    Log.d("nanPUBLISH", "build finish");
     wifiAwareSession.publish(config, new DiscoverySessionCallback() {
       @Override
       public void onPublishStarted(@NonNull PublishDiscoverySession session) {
@@ -470,27 +493,36 @@ public class MainActivity extends AppCompatActivity {
         publishDiscoverySession = session;
         if (publishDiscoverySession != null && peerHandle != null) {
           publishDiscoverySession.sendMessage(peerHandle, MAC_ADDRESS_MESSAGE, myMac);
+          Log.d("nanPUBLISH", "onPublishStarted send message");
+          Button responderButton = (Button)findViewById(R.id.responderButton);
+          Button initiatorButton = (Button)findViewById(R.id.initiatorButton);
+          initiatorButton.setEnabled(false);
+          responderButton.setEnabled(true);
         }
       }
 
       @Override
       public void onMessageReceived(PeerHandle peerHandle_, byte[] message) {
         super.onMessageReceived(peerHandle, message);
+        Log.d("nanPUBLISH", "received message");
         if(message.length == 2) {
           Log.d("myTag", "send port number <not implemented yet>");
         } else if (message.length == 6){
           setOtherMacAddress(message);
+          Toast.makeText(MainActivity.this, "mac received", Toast.LENGTH_LONG).show();
         } else if (message.length == 16) {
           setOtherIPAddress(message);
+          Toast.makeText(MainActivity.this, "ip received", Toast.LENGTH_LONG).show();
         } else if (message.length > 16) {
-          Log.d("myTag", "send message ");
+          setMessage(message);
+          Toast.makeText(MainActivity.this, "message received", Toast.LENGTH_LONG).show();
         }
 
         peerHandle  = peerHandle_;
 
         if (publishDiscoverySession != null && peerHandle != null) {
           publishDiscoverySession.sendMessage(peerHandle, MAC_ADDRESS_MESSAGE, myMac);
-          Toast.makeText(MainActivity.this, "message received", Toast.LENGTH_LONG).show();
+          Toast.makeText(MainActivity.this, "sendingMac", Toast.LENGTH_LONG).show();
         }
       }
     }, null);
@@ -500,11 +532,11 @@ public class MainActivity extends AppCompatActivity {
   private void subscribeToService() {
 
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) { return; }
-
+    Log.d("nanSUBSCRIBE", "building subscribe session");
     SubscribeConfig config = new SubscribeConfig.Builder()
         .setServiceName(THE_MAC)
         .build();
-
+    Log.d("nanSUBSCRIBE", "build finish");
     wifiAwareSession.subscribe(config, new DiscoverySessionCallback() {
 
       @Override
@@ -515,6 +547,11 @@ public class MainActivity extends AppCompatActivity {
 
         if (subscribeDiscoverySession != null && peerHandle != null) {
           subscribeDiscoverySession.sendMessage(peerHandle, MAC_ADDRESS_MESSAGE, myMac);
+          Log.d("nanSUBSCRIBE", "onServiceDiscovered send message");
+          Button responderButton = (Button)findViewById(R.id.responderButton);
+          Button initiatorButton = (Button)findViewById(R.id.initiatorButton);
+          initiatorButton.setEnabled(true);
+          responderButton.setEnabled(false);
         }
       }
 
@@ -526,20 +563,30 @@ public class MainActivity extends AppCompatActivity {
 
         if (subscribeDiscoverySession != null && peerHandle != null) {
           subscribeDiscoverySession.sendMessage(peerHandle, MAC_ADDRESS_MESSAGE, myMac);
+          Log.d("nanSUBSCRIBE", "onServiceStarted send message");
+          Button responderButton = (Button)findViewById(R.id.responderButton);
+          Button initiatorButton = (Button)findViewById(R.id.initiatorButton);
+          initiatorButton.setEnabled(true);
+          responderButton.setEnabled(false);
         }
       }
 
       @Override
       public void onMessageReceived(PeerHandle peerHandle, byte[] message) {
         super.onMessageReceived(peerHandle, message);
+        Log.d("nanSUBSCRIBE", "received message");
+        Toast.makeText(MainActivity.this, "received", Toast.LENGTH_LONG).show();
         if(message.length == 2) {
           Log.d("myTag", "send port number <not implemented yet>");
         } else if (message.length == 6){
           setOtherMacAddress(message);
+          Toast.makeText(MainActivity.this, "mac received", Toast.LENGTH_LONG).show();
         } else if (message.length == 16) {
           setOtherIPAddress(message);
+          Toast.makeText(MainActivity.this, "ip received", Toast.LENGTH_LONG).show();
         } else if (message.length > 16) {
-          Log.d("myTag", "send message ");
+          setMessage(message);
+          Toast.makeText(MainActivity.this, "message received", Toast.LENGTH_LONG).show();
         }
         //TODO: set message on the phone from msg received
       }
@@ -605,6 +652,11 @@ public class MainActivity extends AppCompatActivity {
     if (id == R.id.action_settings) {
       return true;
     }
+    if (id == R.id.close) {
+      closeSession();
+      finish();
+      System.exit(0);
+    }
 
     return super.onOptionsItemSelected(item);
   }
@@ -647,6 +699,10 @@ public class MainActivity extends AppCompatActivity {
       Log.d("myTag", "socket exception " + e.toString());
     }
   }
+  private void setMessage(byte[] msg) {
+    String outmsg = new String(msg).replace("messageToBeSent: ","");
+    EditText editText = (EditText) findViewById(R.id.msgtext);
+    editText.setText(outmsg);
+  }
 
-  //TODO: Create another EditText to transfer ipV6 address for file transfer
 }
