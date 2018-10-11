@@ -493,7 +493,7 @@ public class MainActivity extends AppCompatActivity {
         publishDiscoverySession = session;
         if (publishDiscoverySession != null && peerHandle != null) {
           publishDiscoverySession.sendMessage(peerHandle, MAC_ADDRESS_MESSAGE, myMac);
-          Log.d("nanPUBLISH", "onPublishStarted send message");
+          Log.d("nanPUBLISH", "onPublishStarted sending mac");
           Button responderButton = (Button)findViewById(R.id.responderButton);
           Button initiatorButton = (Button)findViewById(R.id.initiatorButton);
           initiatorButton.setEnabled(false);
@@ -522,7 +522,11 @@ public class MainActivity extends AppCompatActivity {
 
         if (publishDiscoverySession != null && peerHandle != null) {
           publishDiscoverySession.sendMessage(peerHandle, MAC_ADDRESS_MESSAGE, myMac);
-          Toast.makeText(MainActivity.this, "sendingMac", Toast.LENGTH_LONG).show();
+          Log.d("nanPUBLISH", "onMessageReceived sending mac");
+          Button responderButton = (Button)findViewById(R.id.responderButton);
+          Button initiatorButton = (Button)findViewById(R.id.initiatorButton);
+          initiatorButton.setEnabled(false);
+          responderButton.setEnabled(true);
         }
       }
     }, null);
@@ -588,7 +592,6 @@ public class MainActivity extends AppCompatActivity {
           setMessage(message);
           Toast.makeText(MainActivity.this, "message received", Toast.LENGTH_LONG).show();
         }
-        //TODO: set message on the phone from msg received
       }
     }, null);
   }
