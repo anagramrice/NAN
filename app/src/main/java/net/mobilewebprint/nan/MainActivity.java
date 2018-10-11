@@ -42,6 +42,15 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutput;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.Thread;
 import java.lang.Runnable;
 import java.net.SocketException;
@@ -73,6 +82,7 @@ public class MainActivity extends AppCompatActivity {
   private final int                 IP_ADDRESS_MESSAGE             = 33;
   private final int                 MESSAGE                        = 7;
   private static final int          MY_PERMISSION_COARSE_LOCATION_REQUEST_CODE = 88;
+  private static final int          MY_PERMISSION_EXTERNAL_REQUEST_CODE = 99;
   private final String              THE_MAC                         = "THEMAC";
 
   private BroadcastReceiver         broadcastReceiver;
@@ -251,6 +261,14 @@ public class MainActivity extends AppCompatActivity {
               requestPermissions(permissionsWeNeed, MY_PERMISSION_COARSE_LOCATION_REQUEST_CODE);
           }
       }
+      if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+        // And if we're on SDK M or later...
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+          // Ask again, nicely, for the permissions.
+          String[] permissionsWeNeed = new String[]{ Manifest.permission.WRITE_EXTERNAL_STORAGE };
+          requestPermissions(permissionsWeNeed, MY_PERMISSION_EXTERNAL_REQUEST_CODE);
+        }
+      }
   }
 
   @Override
@@ -269,6 +287,16 @@ public class MainActivity extends AppCompatActivity {
                   // The permission was denied, so we can show a message why we can't run the app
                   // and then close the app.
               }
+          }
+          case MY_PERMISSION_EXTERNAL_REQUEST_CODE: {
+          // If request is cancelled, the result arrays are empty.
+            if (grantResults.length > 0
+                  && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+              return;
+
+            } else {
+              Toast.makeText(this, "no sd card access", Toast.LENGTH_LONG).show();
+            }
           }
           // Other permissions could go down here
 
@@ -362,9 +390,10 @@ public class MainActivity extends AppCompatActivity {
           //EXCEPTION!!! java.lang.NullPointerException: Attempt to invoke virtual method 'java.util.Enumeration java.net.NetworkInterface.getInetAddresses()' on a null object reference
           Log.d("myTag", "EXCEPTION!!! " + e.toString());
         }
-
+        startServer(0,3,ipv6);
         // should be done in a separate thread
         /*
+        startServer
         ServerSocket ss = new ServerSocket(0, 5, ipv6);
         int port = ss.getLocalPort();    */
         //TODO: need to send this port via messages to other device to finish client conn info
@@ -388,7 +417,7 @@ public class MainActivity extends AppCompatActivity {
     super.onResume();
 
     String  status = null;
-    Log.d("myTag", "This is my message build" + Build.VERSION.SDK_INT +"\t"+ Build.VERSION_CODES.O);
+    Log.d("myTag", "Current phone build" + Build.VERSION.SDK_INT +"\tMinimum:"+ Build.VERSION_CODES.O);
     Log.d("myTag","Supported Aware: " + getPackageManager().hasSystemFeature(PackageManager.FEATURE_WIFI_AWARE));
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         Log.d("myTag", "Entering OnResume is executed");
@@ -551,7 +580,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (subscribeDiscoverySession != null && peerHandle != null) {
           subscribeDiscoverySession.sendMessage(peerHandle, MAC_ADDRESS_MESSAGE, myMac);
-          Log.d("nanSUBSCRIBE", "onServiceDiscovered send message");
+          Log.d("nanSUBSCRIBE", "onServiceDiscovered send mac");
           Button responderButton = (Button)findViewById(R.id.responderButton);
           Button initiatorButton = (Button)findViewById(R.id.initiatorButton);
           initiatorButton.setEnabled(true);
@@ -567,7 +596,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (subscribeDiscoverySession != null && peerHandle != null) {
           subscribeDiscoverySession.sendMessage(peerHandle, MAC_ADDRESS_MESSAGE, myMac);
-          Log.d("nanSUBSCRIBE", "onServiceStarted send message");
+          Log.d("nanSUBSCRIBE", "onServiceStarted send mac");
           Button responderButton = (Button)findViewById(R.id.responderButton);
           Button initiatorButton = (Button)findViewById(R.id.initiatorButton);
           initiatorButton.setEnabled(true);
@@ -707,5 +736,34 @@ public class MainActivity extends AppCompatActivity {
     EditText editText = (EditText) findViewById(R.id.msgtext);
     editText.setText(outmsg);
   }
+
+  public void startServer(final int port, final int backlog, final InetAddress bindAddr) {
+    Runnable serverTask = new Runnable() {
+      @Override
+      public void run() {
+        try{
+          Log.d("serverThread", "thread running");
+          ServerSocket serverSocket = new ServerSocket(port, backlog, bindAddr);
+          //ServerSocket serverSocket = new ServerSocket();
+          while (true) {
+
+            Log.d("serverThread", "server waiting to accept on " + serverSocket.toString());
+            Socket clientSocket = serverSocket.accept();
+            DataOutputStream out = new DataOutputStream(new BufferedOutputStream(clientSocket.getOutputStream()));
+            DataInputStream in = new DataInputStream(new BufferedInputStream(clientSocket.getInputStream()));
+            byte[] bytes = new byte[1024];
+            in.read();
+            FileOutputStream fos = new FileOutputStream("/sdcard/Download/newfile");
+            fos.write(bytes);
+          }
+        } catch (IOException e) {
+          Log.d("serverThread", "socket exception " + e.toString());
+        }
+      }
+    };
+    Thread serverThread = new Thread(serverTask);
+    serverThread.start();
+  }
+
 
 }
