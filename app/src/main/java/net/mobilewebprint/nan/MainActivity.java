@@ -95,11 +95,14 @@ public class MainActivity extends AppCompatActivity {
   private PeerHandle                peerHandle;
   private Inet6Address              ipv6;
 
+  private byte[]                    portOnSystem;
+  private int                       portToUse;
   private byte[]                    myMac;
   private byte[]                    otherMac;
   private byte[]                    myIP;
   private byte[]                    otherIP;
   private byte[]                    msgtosend;
+
   /**
    * Handles initialization (creation) of the activity.
    *
@@ -213,7 +216,8 @@ public class MainActivity extends AppCompatActivity {
     sendFileButton.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
-        Toast.makeText(MainActivity.this, "Sending file <not yet implemented.>", Toast.LENGTH_LONG).show();
+        Toast.makeText(MainActivity.this, "Sending port <not yet implemented.>", Toast.LENGTH_LONG).show();
+        //TODO: spin up client and send to server
       }
     });
 
@@ -535,7 +539,8 @@ public class MainActivity extends AppCompatActivity {
         super.onMessageReceived(peerHandle, message);
         Log.d("nanPUBLISH", "received message");
         if(message.length == 2) {
-          Log.d("myTag", "send port number <not implemented yet>");
+          portToUse = byteToPortInt(message);
+          Log.d("received", "will use port number "+ portToUse);
         } else if (message.length == 6){
           setOtherMacAddress(message);
           Toast.makeText(MainActivity.this, "mac received", Toast.LENGTH_LONG).show();
@@ -610,7 +615,8 @@ public class MainActivity extends AppCompatActivity {
         Log.d("nanSUBSCRIBE", "received message");
         Toast.makeText(MainActivity.this, "received", Toast.LENGTH_LONG).show();
         if(message.length == 2) {
-          Log.d("myTag", "send port number <not implemented yet>");
+          portToUse = byteToPortInt(message);
+          Log.d("received", "will use port number "+ portToUse);
         } else if (message.length == 6){
           setOtherMacAddress(message);
           Toast.makeText(MainActivity.this, "mac received", Toast.LENGTH_LONG).show();
@@ -737,6 +743,18 @@ public class MainActivity extends AppCompatActivity {
     editText.setText(outmsg);
   }
 
+  public int byteToPortInt(byte[] bytes){
+    return ((bytes[1] & 0xFF) << 8 | (bytes[0] & 0xFF));
+  }
+
+  public byte[] portToBytes(int port){
+    byte[] data = new byte [2];
+    data[0] = (byte) (port & 0xFF);
+    data[1] = (byte) ((port >> 8) & 0xFF);
+    return data;
+  }
+
+  @TargetApi(26)
   public void startServer(final int port, final int backlog, final InetAddress bindAddr) {
     Runnable serverTask = new Runnable() {
       @Override
@@ -746,8 +764,11 @@ public class MainActivity extends AppCompatActivity {
           ServerSocket serverSocket = new ServerSocket(port, backlog, bindAddr);
           //ServerSocket serverSocket = new ServerSocket();
           while (true) {
-
-            Log.d("serverThread", "server waiting to accept on " + serverSocket.toString());
+            portOnSystem = portToBytes(serverSocket.getLocalPort());
+            if (publishDiscoverySession != null && peerHandle != null) {
+              publishDiscoverySession.sendMessage(peerHandle, MAC_ADDRESS_MESSAGE, portOnSystem);
+            }
+            Log.d("serverThread", "server waiting to accept on " + serverSocket.toString()+ serverSocket.getLocalPort());
             Socket clientSocket = serverSocket.accept();
             DataOutputStream out = new DataOutputStream(new BufferedOutputStream(clientSocket.getOutputStream()));
             DataInputStream in = new DataInputStream(new BufferedInputStream(clientSocket.getInputStream()));
