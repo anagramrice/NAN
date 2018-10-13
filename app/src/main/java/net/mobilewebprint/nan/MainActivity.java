@@ -42,15 +42,7 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutput;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.lang.Thread;
 import java.lang.Runnable;
 import java.net.SocketException;
@@ -94,7 +86,7 @@ public class MainActivity extends AppCompatActivity {
   private SubscribeDiscoverySession subscribeDiscoverySession;
   private PeerHandle                peerHandle;
   private Inet6Address              ipv6;
-
+  private ServerSocket              serverSocket;
   private byte[]                    portOnSystem;
   private int                       portToUse;
   private byte[]                    myMac;
@@ -216,7 +208,14 @@ public class MainActivity extends AppCompatActivity {
     sendFileButton.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
-        Toast.makeText(MainActivity.this, "Sending port <not yet implemented.>", Toast.LENGTH_LONG).show();
+        try {
+          Toast.makeText(MainActivity.this, "Sending to port: " + portToUse, Toast.LENGTH_LONG).show();
+          Log.d("myTag", "sending to " + portToUse);   //TODO Brian here initiates
+          clientSendFile(Inet6Address.getByAddress("WifiAwareHost",otherIP, ipv6.getScopedInterface()), portToUse);
+        } catch (UnknownHostException e) {
+          Log.d("sendFileError", "exception line 215" + e.toString());
+        }
+
         //TODO: spin up client and send to server
       }
     });
@@ -761,18 +760,20 @@ public class MainActivity extends AppCompatActivity {
       public void run() {
         try{
           Log.d("serverThread", "thread running");
-          ServerSocket serverSocket = new ServerSocket(port, backlog, bindAddr);
+          serverSocket = new ServerSocket(port, backlog, bindAddr);
           //ServerSocket serverSocket = new ServerSocket();
           while (true) {
             portOnSystem = portToBytes(serverSocket.getLocalPort());
             if (publishDiscoverySession != null && peerHandle != null) {
               publishDiscoverySession.sendMessage(peerHandle, MAC_ADDRESS_MESSAGE, portOnSystem);
+            } else if (subscribeDiscoverySession != null && peerHandle != null)  {
+              subscribeDiscoverySession.sendMessage(peerHandle, MAC_ADDRESS_MESSAGE, portOnSystem);
             }
-            Log.d("serverThread", "server waiting to accept on " + serverSocket.toString()+ serverSocket.getLocalPort());
+            Log.d("serverThread", "server waiting to accept on " + serverSocket.toString());
             Socket clientSocket = serverSocket.accept();
             DataOutputStream out = new DataOutputStream(new BufferedOutputStream(clientSocket.getOutputStream()));
             DataInputStream in = new DataInputStream(new BufferedInputStream(clientSocket.getInputStream()));
-            byte[] bytes = new byte[1024];
+            byte[] bytes = new byte[8192];
             in.read();
             FileOutputStream fos = new FileOutputStream("/sdcard/Download/newfile");
             fos.write(bytes);
@@ -784,7 +785,59 @@ public class MainActivity extends AppCompatActivity {
     };
     Thread serverThread = new Thread(serverTask);
     serverThread.start();
-  }
 
+  }
+  public void clientSendFile(final Inet6Address serverIP,final int serverPort) {
+    Runnable clientTask = new Runnable() {
+      @Override
+      public void run() {
+        byte[] aByte = new byte[1];
+        int bytesRead;
+        Socket clientSocket = null;
+        InputStream is = null;
+        Log.d("clientThread", "thread running socket info "+ serverIP.getHostAddress() + "\t" + serverPort);
+        try {
+          //TODO:  BRIAN issue with the inetaddress socket could not be created java.net.ConnectException: failed to connect to WifiAwareHost/fe80::95:25ff:fe23:62d4 (port 41806) from /:: (port 0): connect failed: EINVAL (Invalid argument)
+          clientSocket = new Socket( serverIP , serverPort );
+          //clientSocket = new Socket( serverSocket.getInetAddress() ,serverSocket.getLocalPort());
+          is = clientSocket.getInputStream();
+          Log.d("clientThread", "socket created ");
+        } catch (IOException ex) {
+          Log.d("clientThread", "socket could not be created " + ex.toString());
+        }
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        if (is != null) {
+
+          FileOutputStream fos = null;
+          BufferedOutputStream bos = null;
+          try {
+            fos = new FileOutputStream( "/sdcard/Download/file" );
+            bos = new BufferedOutputStream(fos);
+            bytesRead = is.read(aByte, 0, aByte.length);
+            Log.d("clientThread", "reading file");
+
+            do {
+              baos.write(aByte);
+              bytesRead = is.read(aByte);
+            } while (bytesRead != -1);
+            Log.d("clientThread", "sending file...");
+            bos.write(baos.toByteArray());
+            bos.flush();
+            bos.close();
+            Log.d("clientThread", "finsh sending file");
+            clientSocket.close();
+          } catch (IOException ex) {
+            Log.d("clientThread", "io exception " + ex.toString());
+          }
+        }
+
+      }
+    };
+    Thread clientThread = new Thread(clientTask);
+    clientThread.start();
+
+  }
 
 }
