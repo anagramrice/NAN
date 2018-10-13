@@ -774,9 +774,13 @@ public class MainActivity extends AppCompatActivity {
             DataOutputStream out = new DataOutputStream(new BufferedOutputStream(clientSocket.getOutputStream()));
             DataInputStream in = new DataInputStream(new BufferedInputStream(clientSocket.getInputStream()));
             byte[] bytes = new byte[8192];
-            in.read();
+            int count;
             FileOutputStream fos = new FileOutputStream("/sdcard/Download/newfile");
-            fos.write(bytes);
+            while ((count = in.read(bytes)) > 0) {
+              fos.write(bytes,0,count);
+            }
+
+
           }
         } catch (IOException e) {
           Log.d("serverThread", "socket exception " + e.toString());
@@ -791,22 +795,36 @@ public class MainActivity extends AppCompatActivity {
     Runnable clientTask = new Runnable() {
       @Override
       public void run() {
-        byte[] aByte = new byte[1];
+        byte[] bytes = new byte[1024];
         int bytesRead;
         Socket clientSocket = null;
         InputStream is = null;
+        OutputStream outs = null;
         Log.d("clientThread", "thread running socket info "+ serverIP.getHostAddress() + "\t" + serverPort);
         try {
           clientSocket = new Socket( serverIP , serverPort );
-          //clientSocket = new Socket( serverSocket.getInetAddress() ,serverSocket.getLocalPort());
           is = clientSocket.getInputStream();
+          outs = clientSocket.getOutputStream();
           Log.d("clientThread", "socket created ");
         } catch (IOException ex) {
           Log.d("clientThread", "socket could not be created " + ex.toString());
         }
+        try {
+          File filetosend = new File("/sdcard/Download/file");
+          //long length = filetosend.length();
+          InputStream in = new FileInputStream(filetosend);
+          //ByteArrayOutputStream baos = new ByteArrayOutputStream();
+          int count;
+          while ((count = in.read(bytes))>0){
+            outs.write(bytes, 0, count);
+          }
+        } catch(FileNotFoundException e){
+          Log.d("clientThread", "file not found exception " + e.toString());
+        } catch(IOException e){
+          Log.d("clientThread", e.toString());
+        }
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
+/*
         if (is != null) {
 
           FileOutputStream fos = null;
@@ -830,7 +848,7 @@ public class MainActivity extends AppCompatActivity {
           } catch (IOException ex) {
             Log.d("clientThread", "io exception " + ex.toString());
           }
-        }
+        }*/
 
       }
     };
