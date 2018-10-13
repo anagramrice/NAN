@@ -773,11 +773,15 @@ public class MainActivity extends AppCompatActivity {
             Socket clientSocket = serverSocket.accept();
             DataOutputStream out = new DataOutputStream(new BufferedOutputStream(clientSocket.getOutputStream()));
             DataInputStream in = new DataInputStream(new BufferedInputStream(clientSocket.getInputStream()));
-            byte[] bytes = new byte[8192];
-            int count;
+            DataInputStream dis = new DataInputStream(clientSocket.getInputStream());
+            byte[] buffer = new byte[4096];
+            int read;
+            int totalRead = 0;
             FileOutputStream fos = new FileOutputStream("/sdcard/Download/newfile");
-            while ((count = in.read(bytes)) > 0) {
-              fos.write(bytes,0,count);
+            while ((read = in.read(buffer)) > 0) {
+              fos.write(buffer,0,read);
+              totalRead += read;
+              Log.d("serverThread", "written total: " + totalRead);
             }
 
 
@@ -795,7 +799,7 @@ public class MainActivity extends AppCompatActivity {
     Runnable clientTask = new Runnable() {
       @Override
       public void run() {
-        byte[] bytes = new byte[1024];
+        byte[] buffer = new byte[4096];
         int bytesRead;
         Socket clientSocket = null;
         InputStream is = null;
@@ -812,11 +816,16 @@ public class MainActivity extends AppCompatActivity {
         try {
           File filetosend = new File("/sdcard/Download/file");
           //long length = filetosend.length();
-          InputStream in = new FileInputStream(filetosend);
+          //InputStream in = new FileInputStream(filetosend);
+          InputStream in = new FileInputStream("/sdcard/Download/file");
           //ByteArrayOutputStream baos = new ByteArrayOutputStream();
           int count;
-          while ((count = in.read(bytes))>0){
-            outs.write(bytes, 0, count);
+          int totalSent = 0;
+          DataOutputStream dos = new DataOutputStream(outs);
+          while ((count = in.read(buffer))>0){
+            totalSent += count;
+            dos.write(buffer, 0, count);
+            Log.d("clientThread", "total sent: "+totalSent);
           }
         } catch(FileNotFoundException e){
           Log.d("clientThread", "file not found exception " + e.toString());
