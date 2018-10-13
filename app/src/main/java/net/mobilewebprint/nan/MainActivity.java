@@ -773,17 +773,19 @@ public class MainActivity extends AppCompatActivity {
             Socket clientSocket = serverSocket.accept();
             DataOutputStream out = new DataOutputStream(new BufferedOutputStream(clientSocket.getOutputStream()));
             DataInputStream in = new DataInputStream(new BufferedInputStream(clientSocket.getInputStream()));
-            DataInputStream dis = new DataInputStream(clientSocket.getInputStream());
             byte[] buffer = new byte[4096];
             int read;
             int totalRead = 0;
             FileOutputStream fos = new FileOutputStream("/sdcard/Download/newfile");
+            Log.d("serverThread", "Socket being written to begin... ");
             while ((read = in.read(buffer)) > 0) {
               fos.write(buffer,0,read);
               totalRead += read;
-              Log.d("serverThread", "written total: " + totalRead);
+              if (totalRead%(4096*2500)==0) {//every 10MB update status
+                  Log.d("clientThread", "total bytes retrieved:" + totalRead);
+              }
             }
-
+            Log.d("serverThread", "finished file transfer: " + totalRead);
 
           }
         } catch (IOException e) {
@@ -814,50 +816,26 @@ public class MainActivity extends AppCompatActivity {
           Log.d("clientThread", "socket could not be created " + ex.toString());
         }
         try {
-          File filetosend = new File("/sdcard/Download/file");
-          //long length = filetosend.length();
-          //InputStream in = new FileInputStream(filetosend);
-          InputStream in = new FileInputStream("/sdcard/Download/file");
-          //ByteArrayOutputStream baos = new ByteArrayOutputStream();
+          InputStream in = new FileInputStream("/sdcard/Download/IEEEspecJun2018.pdf");
           int count;
           int totalSent = 0;
           DataOutputStream dos = new DataOutputStream(outs);
+          Log.d("clientThread", "beginning to send file");
           while ((count = in.read(buffer))>0){
             totalSent += count;
             dos.write(buffer, 0, count);
-            Log.d("clientThread", "total sent: "+totalSent);
+            if (totalSent%(4096*2500)==0) {//every 10MB update status
+                Log.d("clientThread", "total bytes sent:" + totalSent);
+            }
           }
+          in.close();
+          dos.close();
+          Log.d("clientThread", "finished sending file!!! "+totalSent);
         } catch(FileNotFoundException e){
           Log.d("clientThread", "file not found exception " + e.toString());
         } catch(IOException e){
           Log.d("clientThread", e.toString());
         }
-
-/*
-        if (is != null) {
-
-          FileOutputStream fos = null;
-          BufferedOutputStream bos = null;
-          try {
-            fos = new FileOutputStream( "/sdcard/Download/file" );
-            bos = new BufferedOutputStream(fos);
-            bytesRead = is.read(aByte, 0, aByte.length);
-            Log.d("clientThread", "reading file");
-
-            do {
-              baos.write(aByte);
-              bytesRead = is.read(aByte);
-            } while (bytesRead != -1);
-            Log.d("clientThread", "sending file...");
-            bos.write(baos.toByteArray());
-            bos.flush();
-            bos.close();
-            Log.d("clientThread", "finsh sending file");
-            clientSocket.close();
-          } catch (IOException ex) {
-            Log.d("clientThread", "io exception " + ex.toString());
-          }
-        }*/
 
       }
     };
