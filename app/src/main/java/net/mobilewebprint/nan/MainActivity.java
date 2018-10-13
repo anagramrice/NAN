@@ -210,7 +210,7 @@ public class MainActivity extends AppCompatActivity {
       public void onClick(View v) {
         try {
           Toast.makeText(MainActivity.this, "Sending to port: " + portToUse, Toast.LENGTH_LONG).show();
-          Log.d("myTag", "sending to " + portToUse);   //TODO Brian here initiates
+          Log.d("myTag", "sending to " + portToUse + "\t" +ipv6.getScopedInterface().getDisplayName());
           clientSendFile(Inet6Address.getByAddress("WifiAwareHost",otherIP, ipv6.getScopedInterface()), portToUse);
         } catch (UnknownHostException e) {
           Log.d("sendFileError", "exception line 215" + e.toString());
@@ -374,7 +374,7 @@ public class MainActivity extends AppCompatActivity {
             if (addr instanceof Inet6Address) {
               Log.d("myTag", "netinterface ipv6 address: " + addr.toString());
               if (((Inet6Address) addr).isLinkLocalAddress()) {
-                ipv6 = (Inet6Address) addr;
+                ipv6 = Inet6Address.getByAddress("WifiAware",addr.getAddress(),awareNi);
                 myIP = addr.getAddress();
                 if (publishDiscoverySession != null && peerHandle != null) {
                   publishDiscoverySession.sendMessage(peerHandle, IP_ADDRESS_MESSAGE, myIP);
@@ -797,7 +797,6 @@ public class MainActivity extends AppCompatActivity {
         InputStream is = null;
         Log.d("clientThread", "thread running socket info "+ serverIP.getHostAddress() + "\t" + serverPort);
         try {
-          //TODO:  BRIAN issue with the inetaddress socket could not be created java.net.ConnectException: failed to connect to WifiAwareHost/fe80::95:25ff:fe23:62d4 (port 41806) from /:: (port 0): connect failed: EINVAL (Invalid argument)
           clientSocket = new Socket( serverIP , serverPort );
           //clientSocket = new Socket( serverSocket.getInetAddress() ,serverSocket.getLocalPort());
           is = clientSocket.getInputStream();
