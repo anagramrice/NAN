@@ -71,10 +71,7 @@ import java.util.regex.*;
 public class MainActivity extends AppCompatActivity {
 
   private final int                 MAC_ADDRESS_MESSAGE             = 55;
-  private final int                 IP_ADDRESS_MESSAGE             = 33;
-  private final int                 MESSAGE                        = 7;
   private static final int          MY_PERMISSION_COARSE_LOCATION_REQUEST_CODE = 88;
-  private static final int          MY_PERMISSION_EXTERNAL_REQUEST_CODE = 99;
   private final String              THE_MAC                         = "THEMAC";
 
   private BroadcastReceiver         broadcastReceiver;
@@ -85,12 +82,17 @@ public class MainActivity extends AppCompatActivity {
   private PublishDiscoverySession   publishDiscoverySession;
   private SubscribeDiscoverySession subscribeDiscoverySession;
   private PeerHandle                peerHandle;
+  private byte[]                    myMac;
+  private byte[]                    otherMac;
+
+
+  private final int                 IP_ADDRESS_MESSAGE             = 33;
+  private final int                 MESSAGE                        = 7;
+  private static final int          MY_PERMISSION_EXTERNAL_REQUEST_CODE = 99;
   private Inet6Address              ipv6;
   private ServerSocket              serverSocket;
   private byte[]                    portOnSystem;
   private int                       portToUse;
-  private byte[]                    myMac;
-  private byte[]                    otherMac;
   private byte[]                    myIP;
   private byte[]                    otherIP;
   private byte[]                    msgtosend;
@@ -119,7 +121,8 @@ public class MainActivity extends AppCompatActivity {
     Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
     setSupportActionBar(toolbar);
 
-    FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.sendmsgfab);
+    //------------------------------------------------------------------------------------------------------
+    FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.sendmsgfab);        /* +++++ */
     fab.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View view) {
@@ -133,9 +136,11 @@ public class MainActivity extends AppCompatActivity {
           subscribeDiscoverySession.sendMessage(peerHandle, MESSAGE, msgtosend);
         }
       }
-    });
+    });                                                                                   /* ----- */
+    //------------------------------------------------------------------------------------------------------
 
-    Button statusButton = (Button)findViewById(R.id.statusbtn);
+    //------------------------------------------------------------------------------------------------------
+    Button statusButton = (Button)findViewById(R.id.statusbtn);                             /* +++++ */
     statusButton.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View view) {
@@ -159,7 +164,8 @@ public class MainActivity extends AppCompatActivity {
                   .setAction("Action", null).show();
         }
       }
-    });
+    });                                                                                   /* ----- */
+    //------------------------------------------------------------------------------------------------------
 
     Button publishButton = (Button)findViewById(R.id.publishButton);
     publishButton.setOnClickListener(new View.OnClickListener() {
@@ -192,6 +198,7 @@ public class MainActivity extends AppCompatActivity {
       }
     });
 
+    //-------------------------------------------------------------------------------------------- +++++
     Button responderButton = (Button)findViewById(R.id.responderButton);
     responderButton.setOnClickListener(new View.OnClickListener() {
       @Override
@@ -200,10 +207,12 @@ public class MainActivity extends AppCompatActivity {
         networkSpecifier = publishDiscoverySession.createNetworkSpecifierOpen(peerHandle);
         Log.d("myTag", "Responder button clicked <publisher is an responder>\"");
         setStatus("NAN publisher: Responder networkSpecifier created");
-        requestNetwork();
+        requestNetwork(); /* */
       }
     });
+    //-------------------------------------------------------------------------------------------- -----
 
+    //-------------------------------------------------------------------------------------------- +++++
     Button sendFileButton = (Button)findViewById(R.id.sendbtn);
     sendFileButton.setOnClickListener(new View.OnClickListener() {
       @Override
@@ -219,6 +228,7 @@ public class MainActivity extends AppCompatActivity {
         //TODO: spin up client and send to server
       }
     });
+    //-------------------------------------------------------------------------------------------- -----
 
     connectivityManager = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
 
@@ -264,6 +274,8 @@ public class MainActivity extends AppCompatActivity {
               requestPermissions(permissionsWeNeed, MY_PERMISSION_COARSE_LOCATION_REQUEST_CODE);
           }
       }
+
+      //-------------------------------------------------------------------------------------------- +++++
       if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
         // And if we're on SDK M or later...
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -272,6 +284,7 @@ public class MainActivity extends AppCompatActivity {
           requestPermissions(permissionsWeNeed, MY_PERMISSION_EXTERNAL_REQUEST_CODE);
         }
       }
+      //-------------------------------------------------------------------------------------------- -----
   }
 
   @Override
@@ -291,6 +304,8 @@ public class MainActivity extends AppCompatActivity {
                   // and then close the app.
               }
           }
+
+          //-------------------------------------------------------------------------------------------- +++++
           case MY_PERMISSION_EXTERNAL_REQUEST_CODE: {
           // If request is cancelled, the result arrays are empty.
             if (grantResults.length > 0
@@ -301,6 +316,7 @@ public class MainActivity extends AppCompatActivity {
               Toast.makeText(this, "no sd card access", Toast.LENGTH_LONG).show();
             }
           }
+          //-------------------------------------------------------------------------------------------- -----
           // Other permissions could go down here
 
       }
@@ -321,6 +337,7 @@ public class MainActivity extends AppCompatActivity {
         .addTransportType(NetworkCapabilities.TRANSPORT_WIFI_AWARE)
         .setNetworkSpecifier(networkSpecifier)
         .build();
+
     Log.d("myTag", "finish building network interface");
     connectivityManager.requestNetwork(networkRequest, new NetworkCallback(){
       @Override
@@ -349,6 +366,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCapabilitiesChanged(network, networkCapabilities);
       }
 
+      //-------------------------------------------------------------------------------------------- +++++
       @Override
       public void onLinkPropertiesChanged(Network network, LinkProperties linkProperties) {
         super.onLinkPropertiesChanged(network, linkProperties);
@@ -407,6 +425,8 @@ public class MainActivity extends AppCompatActivity {
         /*
         Socket cs = network.getSocketFactory().createSocket(serverIpv6, serverPort);  */
       }
+      //-------------------------------------------------------------------------------------------- -----
+
     });
   }
 
@@ -516,6 +536,8 @@ public class MainActivity extends AppCompatActivity {
     PublishConfig config = new PublishConfig.Builder()
         .setServiceName(THE_MAC)
         .build();
+
+    //-------------------------------------------------------------------------------------------- +++++
     Log.d("nanPUBLISH", "build finish");
     wifiAwareSession.publish(config, new DiscoverySessionCallback() {
       @Override
@@ -563,8 +585,10 @@ public class MainActivity extends AppCompatActivity {
         }
       }
     }, null);
+    //-------------------------------------------------------------------------------------------- -----
   }
 
+  //-------------------------------------------------------------------------------------------- +++++
   @TargetApi(26)
   private void subscribeToService() {
 
@@ -629,6 +653,7 @@ public class MainActivity extends AppCompatActivity {
       }
     }, null);
   }
+  //-------------------------------------------------------------------------------------------- -----
 
   /**
    * Handles cleanup of the activity.
@@ -684,6 +709,7 @@ public class MainActivity extends AppCompatActivity {
     // automatically handle clicks on the Home/Up button, so long
     // as you specify a parent activity in AndroidManifest.xml.
     int id = item.getItemId();
+    //-------------------------------------------------------------------------------------------- +++++
 
     //noinspection SimplifiableIfStatement
     if (id == R.id.action_settings) {
@@ -696,6 +722,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     return super.onOptionsItemSelected(item);
+    //-------------------------------------------------------------------------------------------- -----
   }
 
   /**
@@ -726,6 +753,8 @@ public class MainActivity extends AppCompatActivity {
     EditText editText = (EditText)findViewById(R.id.otherMac);
     editText.setText(macAddress);
   }
+
+  //-------------------------------------------------------------------------------------------- +++++
   private void setOtherIPAddress(byte[] ip) {
     otherIP = ip;
     try {
@@ -843,5 +872,6 @@ public class MainActivity extends AppCompatActivity {
     clientThread.start();
 
   }
+  //-------------------------------------------------------------------------------------------- -----
 
 }
