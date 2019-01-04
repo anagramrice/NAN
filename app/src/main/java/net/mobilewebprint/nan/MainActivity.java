@@ -91,6 +91,7 @@ public class MainActivity extends AppCompatActivity {
   private static final int          MY_PERMISSION_EXTERNAL_REQUEST_CODE = 99;
   private Inet6Address              ipv6;
   private ServerSocket              serverSocket;
+  private final byte[]              serviceInfo            = "android".getBytes();
   private byte[]                    portOnSystem;
   private int                       portToUse;
   private byte[]                    myIP;
@@ -333,6 +334,7 @@ public class MainActivity extends AppCompatActivity {
       return;
     }
     Log.d("myTag", "building network interface");
+    Log.d("myTag", "using networkspecifier: " + networkSpecifier.toString());
     NetworkRequest networkRequest = new NetworkRequest.Builder()
         .addTransportType(NetworkCapabilities.TRANSPORT_WIFI_AWARE)
         .setNetworkSpecifier(networkSpecifier)
@@ -535,6 +537,7 @@ public class MainActivity extends AppCompatActivity {
     Log.d("nanPUBLISH", "building publish session");
     PublishConfig config = new PublishConfig.Builder()
         .setServiceName(THE_MAC)
+        .setServiceSpecificInfo(serviceInfo)
         .build();
 
     //-------------------------------------------------------------------------------------------- +++++
@@ -596,6 +599,7 @@ public class MainActivity extends AppCompatActivity {
     Log.d("nanSUBSCRIBE", "building subscribe session");
     SubscribeConfig config = new SubscribeConfig.Builder()
         .setServiceName(THE_MAC)
+        .setServiceSpecificInfo(serviceInfo)
         .build();
     Log.d("nanSUBSCRIBE", "build finish");
     wifiAwareSession.subscribe(config, new DiscoverySessionCallback() {
