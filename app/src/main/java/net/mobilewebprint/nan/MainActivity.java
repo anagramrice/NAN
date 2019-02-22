@@ -351,21 +351,28 @@ public class MainActivity extends AppCompatActivity {
       @Override
       public void onLosing(Network network, int maxMsToLive) {
         super.onLosing(network, maxMsToLive);
+        Log.d("myTag", "losing Network");
       }
 
       @Override
       public void onLost(Network network) {
         super.onLost(network);
+        Toast.makeText(MainActivity.this, "lost network", Toast.LENGTH_LONG).show();
+        Log.d("myTag", "Lost Network");
       }
 
       @Override
       public void onUnavailable() {
         super.onUnavailable();
+        Toast.makeText(MainActivity.this, "onUnavailable", Toast.LENGTH_LONG).show();
+        Log.d("myTag", "entering onUnavailable ");
       }
 
       @Override
       public void onCapabilitiesChanged(Network network, NetworkCapabilities networkCapabilities) {
         super.onCapabilitiesChanged(network, networkCapabilities);
+        Toast.makeText(MainActivity.this, "onCapabilitiesChanged", Toast.LENGTH_LONG).show();
+        Log.d("myTag", "entering onCapabilitiesChanged ");
       }
 
       //-------------------------------------------------------------------------------------------- +++++
