@@ -800,6 +800,7 @@ public class MainActivity extends AppCompatActivity {
       public void run() {
         try{
           Log.d("serverThread", "thread running");
+          Thread.sleep(1000);
           serverSocket = new ServerSocket(port, backlog, bindAddr);
           //ServerSocket serverSocket = new ServerSocket();
           while (true) {
@@ -830,6 +831,9 @@ public class MainActivity extends AppCompatActivity {
           }
         } catch (IOException e) {
           Log.d("serverThread", "socket exception " + e.toString());
+          Log.d("serverThread",  e.getStackTrace().toString());
+        } catch (InterruptedException e) {
+          e.printStackTrace();
         }
       }
     };
