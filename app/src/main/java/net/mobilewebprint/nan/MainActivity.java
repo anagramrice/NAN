@@ -15,7 +15,6 @@ import android.net.NetworkCapabilities;
 import android.net.NetworkRequest;
 import android.net.NetworkSpecifier;
 import android.net.wifi.aware.AttachCallback;
-import android.net.wifi.aware.DiscoverySession;
 import android.net.wifi.aware.DiscoverySessionCallback;
 import android.net.wifi.aware.IdentityChangedListener;
 import android.net.wifi.aware.PeerHandle;
@@ -27,12 +26,12 @@ import android.net.wifi.aware.WifiAwareManager;
 import android.net.wifi.aware.WifiAwareSession;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v4.app.ActivityCompat;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
+import androidx.annotation.NonNull;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.snackbar.Snackbar;
+import androidx.core.app.ActivityCompat;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.view.Menu;
@@ -54,7 +53,6 @@ import java.net.ServerSocket;
 import java.net.UnknownHostException;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.regex.*;
 
 
 /*
@@ -71,8 +69,8 @@ import java.util.regex.*;
 public class MainActivity extends AppCompatActivity {
 
   private final int                 MAC_ADDRESS_MESSAGE             = 55;
-  private static final int          MY_PERMISSION_COARSE_LOCATION_REQUEST_CODE = 88;
-  private final String              THE_MAC                         = "THEMAC";
+  private static final int          MY_PERMISSION_FINE_LOCATION_REQUEST_CODE = 88;
+  private final String              SERVICE_NAME                         = "org.wifi.nan.test";
 
   private BroadcastReceiver         broadcastReceiver;
   private WifiAwareManager          wifiAwareManager;
@@ -272,7 +270,7 @@ public class MainActivity extends AppCompatActivity {
           if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
               // Ask again, nicely, for the permissions.
               String[] permissionsWeNeed = new String[]{ Manifest.permission.ACCESS_COARSE_LOCATION };
-              requestPermissions(permissionsWeNeed, MY_PERMISSION_COARSE_LOCATION_REQUEST_CODE);
+              requestPermissions(permissionsWeNeed, MY_PERMISSION_FINE_LOCATION_REQUEST_CODE);
           }
       }
 
@@ -292,7 +290,7 @@ public class MainActivity extends AppCompatActivity {
   public void onRequestPermissionsResult(int requestCode,
                                          @NonNull String permissions[], @NonNull int[] grantResults) {
       switch (requestCode) {
-          case MY_PERMISSION_COARSE_LOCATION_REQUEST_CODE: {
+          case MY_PERMISSION_FINE_LOCATION_REQUEST_CODE: {
               // If request is cancelled, the result arrays are empty.
               if (grantResults.length > 0
                       && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -543,7 +541,7 @@ public class MainActivity extends AppCompatActivity {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) { return; }
     Log.d("nanPUBLISH", "building publish session");
     PublishConfig config = new PublishConfig.Builder()
-        .setServiceName(THE_MAC)
+        .setServiceName(SERVICE_NAME)
         .setServiceSpecificInfo(serviceInfo)
         .build();
 
@@ -605,7 +603,7 @@ public class MainActivity extends AppCompatActivity {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) { return; }
     Log.d("nanSUBSCRIBE", "building subscribe session");
     SubscribeConfig config = new SubscribeConfig.Builder()
-        .setServiceName(THE_MAC)
+        .setServiceName(SERVICE_NAME)
         .setServiceSpecificInfo(serviceInfo)
         .build();
     Log.d("nanSUBSCRIBE", "build finish");
