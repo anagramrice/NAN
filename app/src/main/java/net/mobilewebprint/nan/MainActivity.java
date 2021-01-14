@@ -261,15 +261,15 @@ public class MainActivity extends AppCompatActivity {
     setStatus(status);
   }
   /**
-   * App Permissions for Coarse Location
+   * App Permissions for Fine Location
    **/
   private void setupPermissions() {
       // If we don't have the record network permission...
-      if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+      if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
           // And if we're on SDK M or later...
           if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
               // Ask again, nicely, for the permissions.
-              String[] permissionsWeNeed = new String[]{ Manifest.permission.ACCESS_COARSE_LOCATION };
+              String[] permissionsWeNeed = new String[]{ Manifest.permission.ACCESS_FINE_LOCATION };
               requestPermissions(permissionsWeNeed, MY_PERMISSION_FINE_LOCATION_REQUEST_CODE);
           }
       }
