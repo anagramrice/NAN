@@ -2,8 +2,8 @@
   <string name="app_name">NAN</string>
   <string name="action_settings">Settings</string>
   <string name="this_is_the_status">this is the status !!</string>
-  <string name="initiator">Initiator</string>
-  <string name="responder">Responder</string>
+  <string name="initiator">step 4</string>
+  <string name="responder">step 3 req Net</string>
   <string name="publish">Publish</string>
   <string name="subscribe">Subscribe</string>
   <string name="send_file">Send File</string>

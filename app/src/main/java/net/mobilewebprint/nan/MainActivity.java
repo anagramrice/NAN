@@ -3,10 +3,14 @@ package net.mobilewebprint.nan;
 import android.Manifest;
 import android.annotation.TargetApi;
 import android.content.BroadcastReceiver;
+import android.content.ContentUris;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.net.ConnectivityManager;
 import android.net.ConnectivityManager.NetworkCallback;
 import android.net.LinkProperties;
@@ -14,6 +18,7 @@ import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkRequest;
 import android.net.NetworkSpecifier;
+import android.net.Uri;
 import android.net.wifi.aware.AttachCallback;
 import android.net.wifi.aware.DiscoverySessionCallback;
 import android.net.wifi.aware.IdentityChangedListener;
@@ -23,15 +28,22 @@ import android.net.wifi.aware.PublishDiscoverySession;
 import android.net.wifi.aware.SubscribeConfig;
 import android.net.wifi.aware.SubscribeDiscoverySession;
 import android.net.wifi.aware.WifiAwareManager;
+import android.net.wifi.aware.WifiAwareNetworkInfo;
+import android.net.wifi.aware.WifiAwareNetworkSpecifier;
 import android.net.wifi.aware.WifiAwareSession;
 import android.os.Build;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
+
+import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.view.Menu;
@@ -70,6 +82,7 @@ public class MainActivity extends AppCompatActivity {
 
   private final int                 MAC_ADDRESS_MESSAGE             = 55;
   private static final int          MY_PERMISSION_FINE_LOCATION_REQUEST_CODE = 88;
+  private static final int          MY_PERMISSION_BACKGROUND_LOCATION_REQUEST_CODE = 66;
   private final String              SERVICE_NAME                         = "org.wifi.nan.test";
 
   private BroadcastReceiver         broadcastReceiver;
@@ -87,8 +100,11 @@ public class MainActivity extends AppCompatActivity {
   private final int                 IP_ADDRESS_MESSAGE             = 33;
   private final int                 MESSAGE                        = 7;
   private static final int          MY_PERMISSION_EXTERNAL_REQUEST_CODE = 99;
+  private static final int          MY_PERMISSION_EXTERNAL_READ_REQUEST_CODE = 98;
   private Inet6Address              ipv6;
   private ServerSocket              serverSocket;
+  private Inet6Address              peerIpv6;
+  private int                       peerPort;
   private final byte[]              serviceInfo            = "android".getBytes();
   private byte[]                    portOnSystem;
   private int                       portToUse;
@@ -186,11 +202,14 @@ public class MainActivity extends AppCompatActivity {
 
     Button initiatorButton = (Button)findViewById(R.id.initiatorButton);
     initiatorButton.setOnClickListener(new View.OnClickListener() {
+      @RequiresApi(api = Build.VERSION_CODES.Q)
       @Override
       public void onClick(View v) {
 
         //networkSpecifier = wifiAwareSession.createNetworkSpecifierOpen(WifiAwareManager.WIFI_AWARE_DATA_PATH_ROLE_INITIATOR, otherMac);
-        networkSpecifier = subscribeDiscoverySession.createNetworkSpecifierOpen(peerHandle);
+        networkSpecifier = new WifiAwareNetworkSpecifier.Builder(subscribeDiscoverySession, peerHandle)
+                .setPskPassphrase("somePassword")
+                .build();;
         Log.d("myTag", "Initiator button clicked <subscriber is an initiator>");
         setStatus("NAN initiator: subscriber networkSpecifier created");
         requestNetwork();
@@ -200,10 +219,14 @@ public class MainActivity extends AppCompatActivity {
     //-------------------------------------------------------------------------------------------- +++++
     Button responderButton = (Button)findViewById(R.id.responderButton);
     responderButton.setOnClickListener(new View.OnClickListener() {
+      @RequiresApi(api = Build.VERSION_CODES.Q)
       @Override
       public void onClick(View v) {
         //networkSpecifier = wifiAwareSession.createNetworkSpecifierOpen(WifiAwareManager.WIFI_AWARE_DATA_PATH_ROLE_RESPONDER, otherMac);
-        networkSpecifier = publishDiscoverySession.createNetworkSpecifierOpen(peerHandle);
+        networkSpecifier = new WifiAwareNetworkSpecifier.Builder(publishDiscoverySession, peerHandle)
+                .setPskPassphrase("somePassword")
+                .setPort(portToUse)
+                .build();;
         Log.d("myTag", "Responder button clicked <publisher is an responder>\"");
         setStatus("NAN publisher: Responder networkSpecifier created");
         requestNetwork(); /* */
@@ -217,9 +240,9 @@ public class MainActivity extends AppCompatActivity {
       @Override
       public void onClick(View v) {
         try {
-          Toast.makeText(MainActivity.this, "Sending to port: " + portToUse, Toast.LENGTH_LONG).show();
-          Log.d("myTag", "sending to " + portToUse + "\t" +ipv6.getScopedInterface().getDisplayName());
-          clientSendFile(Inet6Address.getByAddress("WifiAwareHost",otherIP, ipv6.getScopedInterface()), portToUse);
+          Toast.makeText(MainActivity.this, "Sending to port: " + peerPort, Toast.LENGTH_LONG).show();
+          Log.d("myTag", "sending to " + peerPort + "\t" +peerIpv6.getScopedInterface().getDisplayName());
+          clientSendFile(Inet6Address.getByAddress("WifiAwareHost",otherIP, peerIpv6.getScopedInterface()), peerPort);
         } catch (UnknownHostException e) {
           Log.d("sendFileError", "exception line 215" + e.toString());
         }
@@ -274,6 +297,15 @@ public class MainActivity extends AppCompatActivity {
           }
       }
 
+/*      if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        // And if we're on SDK M or later...
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+          // Ask again, nicely, for the permissions.
+          String[] permissionsWeNeed = new String[]{ Manifest.permission.ACCESS_BACKGROUND_LOCATION };
+          requestPermissions(permissionsWeNeed, MY_PERMISSION_BACKGROUND_LOCATION_REQUEST_CODE);
+        }
+      }*/
+
       //-------------------------------------------------------------------------------------------- +++++
       if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
         // And if we're on SDK M or later...
@@ -283,6 +315,14 @@ public class MainActivity extends AppCompatActivity {
           requestPermissions(permissionsWeNeed, MY_PERMISSION_EXTERNAL_REQUEST_CODE);
         }
       }
+    if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+      // And if we're on SDK M or later...
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        // Ask again, nicely, for the permissions.
+        String[] permissionsWeNeed = new String[]{ Manifest.permission.READ_EXTERNAL_STORAGE };
+        requestPermissions(permissionsWeNeed, MY_PERMISSION_EXTERNAL_READ_REQUEST_CODE);
+      }
+    }
       //-------------------------------------------------------------------------------------------- -----
   }
 
@@ -303,12 +343,32 @@ public class MainActivity extends AppCompatActivity {
                   // and then close the app.
               }
           }
+/*          case MY_PERMISSION_BACKGROUND_LOCATION_REQUEST_CODE: {
+            // If request is cancelled, the result arrays are empty.
+            if (grantResults.length > 0
+                    && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+              return;
 
+            } else {
+              Toast.makeText(this, "Permission for background location not granted.", Toast.LENGTH_LONG).show();
+              // and then close the app.
+            }
+          }*/
           //-------------------------------------------------------------------------------------------- +++++
           case MY_PERMISSION_EXTERNAL_REQUEST_CODE: {
           // If request is cancelled, the result arrays are empty.
             if (grantResults.length > 0
                   && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+              return;
+
+            } else {
+              Toast.makeText(this, "no sd card access", Toast.LENGTH_LONG).show();
+            }
+          }
+          case MY_PERMISSION_EXTERNAL_READ_REQUEST_CODE: {
+            // If request is cancelled, the result arrays are empty.
+            if (grantResults.length > 0
+                    && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
               return;
 
             } else {
@@ -366,10 +426,14 @@ public class MainActivity extends AppCompatActivity {
         Log.d("myTag", "entering onUnavailable ");
       }
 
+      @RequiresApi(api = Build.VERSION_CODES.Q)
       @Override
       public void onCapabilitiesChanged(Network network, NetworkCapabilities networkCapabilities) {
         super.onCapabilitiesChanged(network, networkCapabilities);
         Toast.makeText(MainActivity.this, "onCapabilitiesChanged", Toast.LENGTH_LONG).show();
+        WifiAwareNetworkInfo peerAwareInfo = (WifiAwareNetworkInfo) networkCapabilities.getTransportInfo();
+        peerIpv6 = peerAwareInfo.getPeerIpv6Addr();
+        peerPort = peerAwareInfo.getPort();
         Log.d("myTag", "entering onCapabilitiesChanged ");
       }
 
@@ -418,7 +482,7 @@ public class MainActivity extends AppCompatActivity {
           //EXCEPTION!!! java.lang.NullPointerException: Attempt to invoke virtual method 'java.util.Enumeration java.net.NetworkInterface.getInetAddresses()' on a null object reference
           Log.d("myTag", "EXCEPTION!!! " + e.toString());
         }
-        startServer(0,3,ipv6);
+        //startServer(0,3,ipv6);
         // should be done in a separate thread
         /*
         startServer
@@ -553,13 +617,18 @@ public class MainActivity extends AppCompatActivity {
         super.onPublishStarted(session);
 
         publishDiscoverySession = session;
+        startServer(0,3);
+        Button sendBtn = (Button)findViewById(R.id.sendbtn);
+        sendBtn.setEnabled(false);
+        Button responderButton = (Button)findViewById(R.id.responderButton);
+        responderButton.setEnabled(true);
         if (publishDiscoverySession != null && peerHandle != null) {
           publishDiscoverySession.sendMessage(peerHandle, MAC_ADDRESS_MESSAGE, myMac);
           Log.d("nanPUBLISH", "onPublishStarted sending mac");
-          Button responderButton = (Button)findViewById(R.id.responderButton);
+
           Button initiatorButton = (Button)findViewById(R.id.initiatorButton);
           initiatorButton.setEnabled(false);
-          responderButton.setEnabled(true);
+
         }
       }
 
@@ -792,22 +861,23 @@ public class MainActivity extends AppCompatActivity {
   }
 
   @TargetApi(26)
-  public void startServer(final int port, final int backlog, final InetAddress bindAddr) {
+  public void startServer(final int port, final int backlog) {
     Runnable serverTask = new Runnable() {
       @Override
       public void run() {
         try{
           Log.d("serverThread", "thread running");
           Thread.sleep(1000);
-          serverSocket = new ServerSocket(port, backlog, bindAddr);
+          serverSocket = new ServerSocket(port, backlog);
           //ServerSocket serverSocket = new ServerSocket();
           while (true) {
-            portOnSystem = portToBytes(serverSocket.getLocalPort());
+            portToUse = serverSocket.getLocalPort();
+            /*portOnSystem = portToBytes(serverSocket.getLocalPort());
             if (publishDiscoverySession != null && peerHandle != null) {
               publishDiscoverySession.sendMessage(peerHandle, MAC_ADDRESS_MESSAGE, portOnSystem);
             } else if (subscribeDiscoverySession != null && peerHandle != null)  {
               subscribeDiscoverySession.sendMessage(peerHandle, MAC_ADDRESS_MESSAGE, portOnSystem);
-            }
+            }*/
             Log.d("serverThread", "server waiting to accept on " + serverSocket.toString());
             Socket clientSocket = serverSocket.accept();
             DataOutputStream out = new DataOutputStream(new BufferedOutputStream(clientSocket.getOutputStream()));
@@ -815,7 +885,16 @@ public class MainActivity extends AppCompatActivity {
             byte[] buffer = new byte[4096];
             int read;
             int totalRead = 0;
-            FileOutputStream fos = new FileOutputStream("/sdcard/Download/newfile");
+            ContentValues values = new ContentValues();
+
+            values.put(MediaStore.MediaColumns.DISPLAY_NAME, "nanFile");       //file name
+            values.put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4");        //file extension, will automatically add to file
+            values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS );     //end "/" is not mandatory
+
+            Uri uri = getContentResolver().insert(MediaStore.Files.getContentUri("external"), values);      //important!
+
+            OutputStream fos = getContentResolver().openOutputStream(uri);
+            //FileOutputStream fos = new FileOutputStream("/sdcard/Download/newfile");
             Log.d("serverThread", "Socket being written to begin... ");
             while ((read = in.read(buffer)) > 0) {
               fos.write(buffer,0,read);
@@ -858,11 +937,31 @@ public class MainActivity extends AppCompatActivity {
           Log.d("clientThread", "socket could not be created " + ex.toString());
         }
         try {
-          InputStream in = new FileInputStream("/sdcard/Download/IEEEspecJun2018.pdf");
+          Uri contentUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
+          Cursor cursor = getContentResolver().query(contentUri, null, null,
+                  null, null);
+          Log.d("clientThread", DatabaseUtils.dumpCursorToString(cursor));
+          Uri uri = null;
+          if (cursor.getCount() == 0) {
+            Log.d( "clientThread","No Video files");;
+          } else {
+            while (cursor.moveToNext()) {
+              String fileName = cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media.DISPLAY_NAME));
+              Log.d("clientThread", fileName);
+              long id = cursor.getLong(cursor.getColumnIndex(MediaStore.Video.Media._ID));
+              uri = ContentUris.withAppendedId(contentUri, id);
+              break;
+            }
+          }
+            if (uri == null) {
+              Log.d( "clientThread","\"IEEEspecJun2018.pdf\" not found");
+            }
+          InputStream in = getContentResolver().openInputStream(uri);
+          //InputStream in = new FileInputStream("/sdcard/Download/IEEEspecJun2018.pdf");
           int count;
           int totalSent = 0;
           DataOutputStream dos = new DataOutputStream(outs);
-          Log.d("clientThread", "beginning to send file");
+          Log.d("clientThread", "beginning to send file (log updates every 10MB)");
           while ((count = in.read(buffer))>0){
             totalSent += count;
             dos.write(buffer, 0, count);
