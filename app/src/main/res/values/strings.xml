@@ -15,4 +15,19 @@
   <string name="messagetosend">MessageToSend</string>
   <string name="messaging">Messaging</string>
   <string name="close">close</string>
+    <string name="title_activity_settings">SettingsActivity</string>
+
+  <!-- Preference Titles -->
+  <string name="service">Service</string>
+  <string name="security">Security</string>
+  <!-- Service Preferences -->
+  <string name="service_name">service_name</string>
+  <string name="service_specific_info">service_specific_info</string>
+  <string name="encryption">encryption</string>
+  <string name="encryptType">encrypt_type</string>
+  <!-- Security Preferences -->
+  <string name="open">open (non-encrypted)</string>
+  <string name="pmk">pairwise master key (byte[] pmk)</string>
+  <string name="psk">pre-shared key (String psk)</string>
+  <string name="security_pass">security_pass</string>
 </resources>

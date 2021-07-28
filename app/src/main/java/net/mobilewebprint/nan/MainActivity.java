@@ -8,6 +8,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
@@ -41,9 +42,12 @@ import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.preference.EditTextPreference;
+import androidx.preference.PreferenceManager;
 
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.provider.OpenableColumns;
 import android.util.Log;
 import android.view.View;
 import android.view.Menu;
@@ -65,6 +69,7 @@ import java.net.ServerSocket;
 import java.net.UnknownHostException;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Map;
 
 
 /*
@@ -78,12 +83,12 @@ import java.util.List;
  *
  */
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener {
 
   private final int                 MAC_ADDRESS_MESSAGE             = 55;
   private static final int          MY_PERMISSION_FINE_LOCATION_REQUEST_CODE = 88;
   private static final int          MY_PERMISSION_BACKGROUND_LOCATION_REQUEST_CODE = 66;
-  private final String              SERVICE_NAME                         = "org.wifi.nan.test";
+//  private final String              SERVICE_NAME                         = "org.wifi.nan.test";
 
   private BroadcastReceiver         broadcastReceiver;
   private WifiAwareManager          wifiAwareManager;
@@ -96,6 +101,11 @@ public class MainActivity extends AppCompatActivity {
   private byte[]                    myMac;
   private byte[]                    otherMac;
 
+  private String                    EncryptType;
+  private String                    SERVICE_NAME;
+  private byte[]                    serviceInfo;
+  private byte[]                    pmk;
+  private String                    psk;
 
   private final int                 IP_ADDRESS_MESSAGE             = 33;
   private final int                 MESSAGE                        = 7;
@@ -105,12 +115,75 @@ public class MainActivity extends AppCompatActivity {
   private ServerSocket              serverSocket;
   private Inet6Address              peerIpv6;
   private int                       peerPort;
-  private final byte[]              serviceInfo            = "android".getBytes();
+//  private final byte[]              serviceInfo            = "android".getBytes();
+//  private final byte[]              pmk            = "123456789abcdef0123456789abcdef0".getBytes();
   private byte[]                    portOnSystem;
   private int                       portToUse;
   private byte[]                    myIP;
   private byte[]                    otherIP;
   private byte[]                    msgtosend;
+
+
+  @Override
+  public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+      if (key.equals(getString(R.string.service_name))) {
+        SERVICE_NAME = sharedPreferences.getString(getResources().getString(R.string.service_name),"org.wifi.nan.test");
+        Log.d("prefs","service Name updated to: " + SERVICE_NAME);
+      } else if (key.equals(getString(R.string.service_specific_info))) {
+        serviceInfo = sharedPreferences.getString(getResources().getString(R.string.service_specific_info),"android").getBytes();
+        Log.d("prefs","service info updated to: " + new String(serviceInfo));
+      } else if (key.equals(getString(R.string.encryptType))) {
+        EncryptType = sharedPreferences.getString(getResources().getString(R.string.encryptType),"open");
+      }
+      try {
+        if (EncryptType.equals("pmk")) {
+          pmk = sharedPreferences.getString(getResources().getString(R.string.security_pass), "123456789abcdef0123456789abcdef0").getBytes();
+          Log.d("prefs", "pmk " + pmk);
+        } else if (EncryptType.equals("psk")) {
+          psk = sharedPreferences.getString(getResources().getString(R.string.security_pass), "12345678");
+          Log.d("prefs", "psk " + psk);
+        }
+      } catch (java.lang.NullPointerException e){
+        Log.e("prefs", e.toString());
+      }
+
+  }
+
+  private void setupSharedPreferences() {
+    // Get all of the values from shared preferences to set it up
+    SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+    Map<String,?> keys = sharedPreferences.getAll();
+
+    for(Map.Entry<String,?> entry : keys.entrySet()){
+      Log.d("map values",entry.getKey() + ": " +
+              entry.getValue().toString());
+      if (entry.getKey().equals(getResources().getString(R.string.service_name)) ){
+        SERVICE_NAME=entry.getValue().toString();
+        Log.d("prefs","service Name set " + entry.getValue().toString());
+      }
+      if (entry.getKey().equals(getResources().getString(R.string.service_specific_info))){
+        serviceInfo=entry.getValue().toString().getBytes();
+        Log.d("prefs", "service info set " + entry.getValue().toString());
+      }
+      if (entry.getKey().equals(getResources().getString(R.string.encryptType))) {
+        EncryptType = entry.getValue().toString();
+      }
+    }
+    try {
+      if (EncryptType.equals("pmk")){
+        pmk = sharedPreferences.getString(getResources().getString(R.string.security_pass),"123456789abcdef0123456789abcdef0").getBytes();
+        Log.d("prefs", "pmk " + pmk);
+      } else if (EncryptType.equals("psk")) {
+        psk = sharedPreferences.getString(getResources().getString(R.string.security_pass),"12345678");
+        Log.d("prefs", "psk " + psk);
+      }
+    } catch (java.lang.NullPointerException e){
+      Log.e("prefs", e.toString());
+    }
+
+    // Register the listener
+    sharedPreferences.registerOnSharedPreferenceChangeListener(this);
+  }
 
   /**
    * Handles initialization (creation) of the activity.
@@ -131,6 +204,7 @@ public class MainActivity extends AppCompatActivity {
     peerHandle = null;
 
     //Log.d("myTag","Supported Aware: " + getPackageManager().hasSystemFeature(PackageManager.FEATURE_WIFI_AWARE));
+    setupSharedPreferences();
     setupPermissions();
     setContentView(R.layout.activity_main);
     Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -205,11 +279,23 @@ public class MainActivity extends AppCompatActivity {
       @RequiresApi(api = Build.VERSION_CODES.Q)
       @Override
       public void onClick(View v) {
-
+        Log.d("myTag", "initiating subscribeSession "+EncryptType);
         //networkSpecifier = wifiAwareSession.createNetworkSpecifierOpen(WifiAwareManager.WIFI_AWARE_DATA_PATH_ROLE_INITIATOR, otherMac);
-        networkSpecifier = new WifiAwareNetworkSpecifier.Builder(subscribeDiscoverySession, peerHandle)
-                .setPskPassphrase("somePassword")
-                .build();;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+          if (EncryptType.equals("open")) {
+            networkSpecifier = new WifiAwareNetworkSpecifier.Builder(subscribeDiscoverySession, peerHandle)
+                    .build();
+          } else if (EncryptType.equals("pmk")){
+            networkSpecifier = new WifiAwareNetworkSpecifier.Builder(subscribeDiscoverySession, peerHandle)
+                    .setPmk(pmk)
+                    .build();
+          } else if (EncryptType.equals("psk")){
+            networkSpecifier = new WifiAwareNetworkSpecifier.Builder(subscribeDiscoverySession, peerHandle)
+                    .setPskPassphrase(psk)
+                    .build();
+          }
+        }
+
         Log.d("myTag", "Initiator button clicked <subscriber is an initiator>");
         setStatus("NAN initiator: subscriber networkSpecifier created");
         requestNetwork();
@@ -222,11 +308,34 @@ public class MainActivity extends AppCompatActivity {
       @RequiresApi(api = Build.VERSION_CODES.Q)
       @Override
       public void onClick(View v) {
+        Log.d("myTag", "starting dataSession "+EncryptType);
         //networkSpecifier = wifiAwareSession.createNetworkSpecifierOpen(WifiAwareManager.WIFI_AWARE_DATA_PATH_ROLE_RESPONDER, otherMac);
-        networkSpecifier = new WifiAwareNetworkSpecifier.Builder(publishDiscoverySession, peerHandle)
-                .setPskPassphrase("somePassword")
-                .setPort(portToUse)
-                .build();;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+          if (EncryptType.equals("open")) {
+            networkSpecifier = new WifiAwareNetworkSpecifier.Builder(publishDiscoverySession, peerHandle)
+                    .build();
+            portOnSystem = portToBytes(serverSocket.getLocalPort());
+            Log.d("serverThread", "server port sending OTA");
+            if (publishDiscoverySession != null && peerHandle != null) {
+              publishDiscoverySession.sendMessage(peerHandle, MAC_ADDRESS_MESSAGE, portOnSystem);
+              Log.d("serverThread", "pub_sess");
+            } else if (subscribeDiscoverySession != null && peerHandle != null)  {
+              subscribeDiscoverySession.sendMessage(peerHandle, MAC_ADDRESS_MESSAGE, portOnSystem);
+              Log.d("serverThread", "dis_sess");
+            }
+          } else if (EncryptType.equals("pmk")){
+            networkSpecifier = new WifiAwareNetworkSpecifier.Builder(publishDiscoverySession, peerHandle)
+                    .setPmk(pmk)
+                    .setPort(portToUse)
+                    .build();
+          } else if (EncryptType.equals("psk")){
+            networkSpecifier = new WifiAwareNetworkSpecifier.Builder(publishDiscoverySession, peerHandle)
+                    .setPskPassphrase(psk)
+                    .setPort(portToUse)
+                    .build();
+          }
+        }
+        ;
         Log.d("myTag", "Responder button clicked <publisher is an responder>\"");
         setStatus("NAN publisher: Responder networkSpecifier created");
         requestNetwork(); /* */
@@ -240,11 +349,19 @@ public class MainActivity extends AppCompatActivity {
       @Override
       public void onClick(View v) {
         try {
-          Toast.makeText(MainActivity.this, "Sending to port: " + peerPort, Toast.LENGTH_LONG).show();
-          Log.d("myTag", "sending to " + peerPort + "\t" +peerIpv6.getScopedInterface().getDisplayName());
-          clientSendFile(Inet6Address.getByAddress("WifiAwareHost",otherIP, peerIpv6.getScopedInterface()), peerPort);
+          if (EncryptType.equals("open")) {
+            Toast.makeText(MainActivity.this, "Sending to port: " + portToUse, Toast.LENGTH_SHORT).show();
+            Log.d("myTag", "sending to " + portToUse + "\t" +peerIpv6.getScopedInterface().getDisplayName());
+            clientSendFile(Inet6Address.getByAddress("WifiAwareHost",otherIP, peerIpv6.getScopedInterface()), portToUse);
+          }
+          else{
+            Toast.makeText(MainActivity.this, "Sending to port: " + peerPort, Toast.LENGTH_SHORT).show();
+            Log.d("myTag", "sending to " + peerPort + "\t" +peerIpv6.getScopedInterface().getDisplayName());
+            clientSendFile(Inet6Address.getByAddress("WifiAwareHost",otherIP, peerIpv6.getScopedInterface()), peerPort);
+          }
+
         } catch (UnknownHostException e) {
-          Log.d("sendFileError", "exception line 215" + e.toString());
+          Log.d("sendFileError", "exception " + e.toString());
         }
 
         //TODO: spin up client and send to server
@@ -422,7 +539,7 @@ public class MainActivity extends AppCompatActivity {
       @Override
       public void onUnavailable() {
         super.onUnavailable();
-        Toast.makeText(MainActivity.this, "onUnavailable", Toast.LENGTH_LONG).show();
+        Toast.makeText(MainActivity.this, "onUnavailable", Toast.LENGTH_SHORT).show();
         Log.d("myTag", "entering onUnavailable ");
       }
 
@@ -430,11 +547,12 @@ public class MainActivity extends AppCompatActivity {
       @Override
       public void onCapabilitiesChanged(Network network, NetworkCapabilities networkCapabilities) {
         super.onCapabilitiesChanged(network, networkCapabilities);
-        Toast.makeText(MainActivity.this, "onCapabilitiesChanged", Toast.LENGTH_LONG).show();
+        Toast.makeText(MainActivity.this, "onCapabilitiesChanged", Toast.LENGTH_SHORT).show();
         WifiAwareNetworkInfo peerAwareInfo = (WifiAwareNetworkInfo) networkCapabilities.getTransportInfo();
         peerIpv6 = peerAwareInfo.getPeerIpv6Addr();
         peerPort = peerAwareInfo.getPort();
         Log.d("myTag", "entering onCapabilitiesChanged ");
+        setStatus("Ready for file transfer\nSend File when both IPv6 shown");
       }
 
       //-------------------------------------------------------------------------------------------- +++++
@@ -442,7 +560,7 @@ public class MainActivity extends AppCompatActivity {
       public void onLinkPropertiesChanged(Network network, LinkProperties linkProperties) {
         super.onLinkPropertiesChanged(network, linkProperties);
         //TODO: create socketServer on different thread to transfer files
-        Toast.makeText(MainActivity.this, "onLinkPropertiesChanged", Toast.LENGTH_LONG).show();
+        Toast.makeText(MainActivity.this, "onLinkPropertiesChanged", Toast.LENGTH_SHORT).show();
         Log.d("myTag", "entering linkPropertiesChanged ");
         try {
           //Log.d("myTag", "iface name: " + linkProperties.getInterfaceName());
@@ -603,7 +721,7 @@ public class MainActivity extends AppCompatActivity {
   private void publishService() {
 
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) { return; }
-    Log.d("nanPUBLISH", "building publish session");
+    Log.d("nanPUBLISH", "building publish session"+ SERVICE_NAME);
     PublishConfig config = new PublishConfig.Builder()
         .setServiceName(SERVICE_NAME)
         .setServiceSpecificInfo(serviceInfo)
@@ -641,13 +759,13 @@ public class MainActivity extends AppCompatActivity {
           Log.d("received", "will use port number "+ portToUse);
         } else if (message.length == 6){
           setOtherMacAddress(message);
-          Toast.makeText(MainActivity.this, "mac received", Toast.LENGTH_LONG).show();
+          //Toast.makeText(MainActivity.this, "mac received", Toast.LENGTH_SHORT).show();
         } else if (message.length == 16) {
           setOtherIPAddress(message);
-          Toast.makeText(MainActivity.this, "ip received", Toast.LENGTH_LONG).show();
+          //Toast.makeText(MainActivity.this, "ip received", Toast.LENGTH_SHORT).show();
         } else if (message.length > 16) {
           setMessage(message);
-          Toast.makeText(MainActivity.this, "message received", Toast.LENGTH_LONG).show();
+          //Toast.makeText(MainActivity.this, "message received", Toast.LENGTH_SHORT).show();
         }
 
         peerHandle  = peerHandle_;
@@ -714,19 +832,19 @@ public class MainActivity extends AppCompatActivity {
       public void onMessageReceived(PeerHandle peerHandle, byte[] message) {
         super.onMessageReceived(peerHandle, message);
         Log.d("nanSUBSCRIBE", "received message");
-        Toast.makeText(MainActivity.this, "received", Toast.LENGTH_LONG).show();
+        //Toast.makeText(MainActivity.this, "received", Toast.LENGTH_LONG).show();
         if(message.length == 2) {
           portToUse = byteToPortInt(message);
           Log.d("received", "will use port number "+ portToUse);
         } else if (message.length == 6){
           setOtherMacAddress(message);
-          Toast.makeText(MainActivity.this, "mac received", Toast.LENGTH_LONG).show();
+          //Toast.makeText(MainActivity.this, "mac received", Toast.LENGTH_SHORT).show();
         } else if (message.length == 16) {
           setOtherIPAddress(message);
-          Toast.makeText(MainActivity.this, "ip received", Toast.LENGTH_LONG).show();
+          //Toast.makeText(MainActivity.this, "ip received", Toast.LENGTH_SHORT).show();
         } else if (message.length > 16) {
           setMessage(message);
-          Toast.makeText(MainActivity.this, "message received", Toast.LENGTH_LONG).show();
+          //Toast.makeText(MainActivity.this, "message received", Toast.LENGTH_SHORT).show();
         }
       }
     }, null);
@@ -791,6 +909,8 @@ public class MainActivity extends AppCompatActivity {
 
     //noinspection SimplifiableIfStatement
     if (id == R.id.action_settings) {
+      Intent startSettingsActivity = new Intent(this, SettingsActivity.class);
+      startActivity(startSettingsActivity);
       return true;
     }
     if (id == R.id.close) {
@@ -872,12 +992,10 @@ public class MainActivity extends AppCompatActivity {
           //ServerSocket serverSocket = new ServerSocket();
           while (true) {
             portToUse = serverSocket.getLocalPort();
-            /*portOnSystem = portToBytes(serverSocket.getLocalPort());
-            if (publishDiscoverySession != null && peerHandle != null) {
-              publishDiscoverySession.sendMessage(peerHandle, MAC_ADDRESS_MESSAGE, portOnSystem);
-            } else if (subscribeDiscoverySession != null && peerHandle != null)  {
-              subscribeDiscoverySession.sendMessage(peerHandle, MAC_ADDRESS_MESSAGE, portOnSystem);
-            }*/
+            if (EncryptType.equals("open")) {
+              portOnSystem = portToBytes(serverSocket.getLocalPort());
+            }
+
             Log.d("serverThread", "server waiting to accept on " + serverSocket.toString());
             Socket clientSocket = serverSocket.accept();
             DataOutputStream out = new DataOutputStream(new BufferedOutputStream(clientSocket.getOutputStream()));
@@ -925,6 +1043,7 @@ public class MainActivity extends AppCompatActivity {
         byte[] buffer = new byte[4096];
         int bytesRead;
         Socket clientSocket = null;
+        int fsize = 1;
         InputStream is = null;
         OutputStream outs = null;
         Log.d("clientThread", "thread running socket info "+ serverIP.getHostAddress() + "\t" + serverPort);
@@ -939,8 +1058,8 @@ public class MainActivity extends AppCompatActivity {
         try {
           Uri contentUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
           Cursor cursor = getContentResolver().query(contentUri, null, null,
-                  null, null);
-          Log.d("clientThread", DatabaseUtils.dumpCursorToString(cursor));
+                  null,  "date_modified DESC");
+          //Log.d("clientThread", DatabaseUtils.dumpCursorToString(cursor));
           Uri uri = null;
           if (cursor.getCount() == 0) {
             Log.d( "clientThread","No Video files");;
@@ -950,28 +1069,40 @@ public class MainActivity extends AppCompatActivity {
               Log.d("clientThread", fileName);
               long id = cursor.getLong(cursor.getColumnIndex(MediaStore.Video.Media._ID));
               uri = ContentUris.withAppendedId(contentUri, id);
+              fsize = cursor.getColumnIndex(OpenableColumns.SIZE);
+              File mediaFile = new File(uri.getPath());
+              long fileSizeInBytes = mediaFile.length();
+              Log.d("clientThread", String.valueOf(fileSizeInBytes));
               break;
             }
           }
             if (uri == null) {
               Log.d( "clientThread","\"IEEEspecJun2018.pdf\" not found");
             }
+
           InputStream in = getContentResolver().openInputStream(uri);
           //InputStream in = new FileInputStream("/sdcard/Download/IEEEspecJun2018.pdf");
           int count;
           int totalSent = 0;
           DataOutputStream dos = new DataOutputStream(outs);
-          Log.d("clientThread", "beginning to send file (log updates every 10MB)");
+          Log.d("clientThread", "beginning to send file (log updates every 2MB)");
           while ((count = in.read(buffer))>0){
             totalSent += count;
             dos.write(buffer, 0, count);
-            if (totalSent%(4096*2500)==0) {//every 10MB update status
-                Log.d("clientThread", "total bytes sent:" + totalSent);
+            if (totalSent%(10240*200)==0) {//every 2MB update status
+                Log.d("clientThread", "total bytes sent:" + totalSent  +"\t"+ fsize);
+                try{
+                  float percent = (float) totalSent/fsize;
+                  setStatus("percent sent: "+ String.format("%.2f",percent));
+                } catch (Exception e) {
+                  Log.e("clientThread",e.toString());
+              }
             }
           }
           in.close();
           dos.close();
           Log.d("clientThread", "finished sending file!!! "+totalSent);
+          setStatus("Finished sending file");
         } catch(FileNotFoundException e){
           Log.d("clientThread", "file not found exception " + e.toString());
         } catch(IOException e){
@@ -984,6 +1115,7 @@ public class MainActivity extends AppCompatActivity {
     clientThread.start();
 
   }
+
   //-------------------------------------------------------------------------------------------- -----
 
 }

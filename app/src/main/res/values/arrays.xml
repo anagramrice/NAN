@@ -1,0 +1,14 @@
+<resources>
+    <!-- Reply Preference -->
+    <string-array name="security_entries">
+        <item>Open</item>
+        <item>Pre-shared Key</item>
+        <item>Pairwise Master Key</item>
+    </string-array>
+
+    <string-array name="security_values">
+        <item>open</item>
+        <item>psk</item>
+        <item>pmk</item>
+    </string-array>
+</resources>
