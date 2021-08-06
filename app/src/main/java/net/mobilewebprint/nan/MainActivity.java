@@ -308,31 +308,43 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
       @RequiresApi(api = Build.VERSION_CODES.Q)
       @Override
       public void onClick(View v) {
-        Log.d("myTag", "starting dataSession "+EncryptType);
+        Log.d("step3 Responder", "starting dataSession "+EncryptType);
         //networkSpecifier = wifiAwareSession.createNetworkSpecifierOpen(WifiAwareManager.WIFI_AWARE_DATA_PATH_ROLE_RESPONDER, otherMac);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
           if (EncryptType.equals("open")) {
             networkSpecifier = new WifiAwareNetworkSpecifier.Builder(publishDiscoverySession, peerHandle)
                     .build();
             portOnSystem = portToBytes(serverSocket.getLocalPort());
-            Log.d("serverThread", "server port sending OTA");
+            Log.d("step3 Responder", "server port sending OTA");
             if (publishDiscoverySession != null && peerHandle != null) {
               publishDiscoverySession.sendMessage(peerHandle, MAC_ADDRESS_MESSAGE, portOnSystem);
-              Log.d("serverThread", "pub_sess");
+              Log.d("step3 Responder", "pub_sess");
             } else if (subscribeDiscoverySession != null && peerHandle != null)  {
               subscribeDiscoverySession.sendMessage(peerHandle, MAC_ADDRESS_MESSAGE, portOnSystem);
-              Log.d("serverThread", "dis_sess");
+              Log.d("step3 Responder", "dis_sess");
             }
           } else if (EncryptType.equals("pmk")){
-            networkSpecifier = new WifiAwareNetworkSpecifier.Builder(publishDiscoverySession, peerHandle)
-                    .setPmk(pmk)
-                    .setPort(portToUse)
-                    .build();
+            try{
+              networkSpecifier = new WifiAwareNetworkSpecifier.Builder(publishDiscoverySession, peerHandle)
+                      .setPmk(pmk)
+                      .setPort(portToUse)
+                      .build();
+            }catch (Exception e) {
+              Log.e("step3 Responder",e.toString());
+              Log.d("step3 Responder", publishDiscoverySession.toString() + peerHandle.toString());
+            }
+
           } else if (EncryptType.equals("psk")){
-            networkSpecifier = new WifiAwareNetworkSpecifier.Builder(publishDiscoverySession, peerHandle)
-                    .setPskPassphrase(psk)
-                    .setPort(portToUse)
-                    .build();
+            try{
+              networkSpecifier = new WifiAwareNetworkSpecifier.Builder(publishDiscoverySession, peerHandle)
+                      .setPskPassphrase(psk)
+                      .setPort(portToUse)
+                      .build();
+            } catch (Exception e) {
+              Log.e("step3 Responder",e.toString());
+              Log.d("step3 Responder", publishDiscoverySession.toString() + peerHandle.toString());
+            }
+
           }
         }
         ;
