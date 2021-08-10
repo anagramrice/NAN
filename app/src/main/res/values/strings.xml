@@ -21,6 +21,8 @@
   <string name="service">Service</string>
   <string name="security">Security</string>
   <!-- Service Preferences -->
+  <string name="pubType">Publish Type</string>
+  <string name="subType">Subscribe Type</string>
   <string name="service_name">service_name</string>
   <string name="service_specific_info">service_specific_info</string>
   <string name="encryption">encryption</string>

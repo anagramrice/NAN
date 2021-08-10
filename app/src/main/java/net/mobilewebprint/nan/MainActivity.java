@@ -101,6 +101,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
   private byte[]                    myMac;
   private byte[]                    otherMac;
 
+  private int                       pubType;
+  private int                       subType;
   private String                    EncryptType;
   private String                    SERVICE_NAME;
   private byte[]                    serviceInfo;
@@ -134,11 +136,30 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         Log.d("prefs","service info updated to: " + new String(serviceInfo));
       } else if (key.equals(getString(R.string.encryptType))) {
         EncryptType = sharedPreferences.getString(getResources().getString(R.string.encryptType),"open");
+      } else if (key.equals(getString(R.string.pubType))) {
+          String type = sharedPreferences.getString(getResources().getString(R.string.pubType),"unsolicited");
+          if (type.equals("unsolicited")){
+            pubType = PublishConfig.PUBLISH_TYPE_UNSOLICITED;
+            Log.d("prefs","pubtype: " + type);
+          } else{
+            pubType = PublishConfig.PUBLISH_TYPE_SOLICITED;
+            Log.d("prefs","pubtype: " + type);
+          }
+
+      } else if (key.equals(getString(R.string.subType))) {
+          String type = sharedPreferences.getString(getResources().getString(R.string.subType),"passive");
+          if (type.equals("passive")){
+            subType = SubscribeConfig.SUBSCRIBE_TYPE_PASSIVE;
+            Log.d("prefs","subtype: " + type);
+          } else{
+            subType = SubscribeConfig.SUBSCRIBE_TYPE_ACTIVE;
+            Log.d("prefs","subtype: " + type);
+          }
       }
       try {
         if (EncryptType.equals("pmk")) {
           pmk = sharedPreferences.getString(getResources().getString(R.string.security_pass), "123456789abcdef0123456789abcdef0").getBytes();
-          Log.d("prefs", "pmk " + pmk);
+          Log.d("prefs", "pmk " + new String(pmk));
         } else if (EncryptType.equals("psk")) {
           psk = sharedPreferences.getString(getResources().getString(R.string.security_pass), "12345678");
           Log.d("prefs", "psk " + psk);
@@ -172,7 +193,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     try {
       if (EncryptType.equals("pmk")){
         pmk = sharedPreferences.getString(getResources().getString(R.string.security_pass),"123456789abcdef0123456789abcdef0").getBytes();
-        Log.d("prefs", "pmk " + pmk);
+        Log.d("prefs", "pmk " + new String(pmk));
       } else if (EncryptType.equals("psk")) {
         psk = sharedPreferences.getString(getResources().getString(R.string.security_pass),"12345678");
         Log.d("prefs", "psk " + psk);
@@ -734,9 +755,11 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) { return; }
     Log.d("nanPUBLISH", "building publish session"+ SERVICE_NAME);
+
     PublishConfig config = new PublishConfig.Builder()
         .setServiceName(SERVICE_NAME)
         .setServiceSpecificInfo(serviceInfo)
+        .setPublishType(pubType)
         .build();
 
     //-------------------------------------------------------------------------------------------- +++++
@@ -761,6 +784,13 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
         }
       }
+      @Override
+      public void onServiceDiscovered(PeerHandle peerHandle_, byte[] serviceSpecificInfo, List<byte[]> matchFilter) {
+        super.onServiceDiscovered(peerHandle, serviceSpecificInfo, matchFilter);
+
+        peerHandle = peerHandle_;
+        Log.d("nanPUBLISH", "onServiceDiscovered found peerHandle");
+      }
 
       @Override
       public void onMessageReceived(PeerHandle peerHandle_, byte[] message) {
@@ -780,7 +810,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
           //Toast.makeText(MainActivity.this, "message received", Toast.LENGTH_SHORT).show();
         }
 
-        peerHandle  = peerHandle_;
+        peerHandle = peerHandle_;
 
         if (publishDiscoverySession != null && peerHandle != null) {
           publishDiscoverySession.sendMessage(peerHandle, MAC_ADDRESS_MESSAGE, myMac);
@@ -804,6 +834,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     SubscribeConfig config = new SubscribeConfig.Builder()
         .setServiceName(SERVICE_NAME)
         .setServiceSpecificInfo(serviceInfo)
+        .setSubscribeType(subType)
         .build();
     Log.d("nanSUBSCRIBE", "build finish");
     wifiAwareSession.subscribe(config, new DiscoverySessionCallback() {

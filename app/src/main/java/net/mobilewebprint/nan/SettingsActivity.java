@@ -66,20 +66,19 @@ public class SettingsActivity extends AppCompatActivity {
         public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
             // Figure out which preference was changed
             Preference preference = findPreference(key);
+
             String secType = getString(R.string.encryptType);
             String type = sharedPreferences.getString(key, "");
             if (key.equals(secType)) {
-                    if (type.equals("pmk")) {
-                        passphrase.setVisible(true);
-                        passphrase.setText("123456789abcdef0123456789abcdef0");
-                    }
-                    else if(type.equals("psk")) {
-                        passphrase.setVisible(true);
-                        passphrase.setText("12345678");
-                    }
-                    else {
-                        passphrase.setVisible(false);
-                    }
+                if (type.equals("pmk")) {
+                    passphrase.setVisible(true);
+                    passphrase.setText("123456789abcdef0123456789abcdef0");
+                } else if (type.equals("psk")) {
+                    passphrase.setVisible(true);
+                    passphrase.setText("12345678");
+                } else {
+                    passphrase.setVisible(false);
+                }
             }
             if (null != preference) {
                 // Updates the summary for the preference
@@ -87,6 +86,9 @@ public class SettingsActivity extends AppCompatActivity {
                     String value = sharedPreferences.getString(preference.getKey(), "");
                 }
             }
+
+
+
         }
 
         @Override

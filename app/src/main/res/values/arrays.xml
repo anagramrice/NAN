@@ -11,4 +11,14 @@
         <item>psk</item>
         <item>pmk</item>
     </string-array>
+
+    <string-array name="publish_types">
+        <item>unsolicited</item>
+        <item>solicited</item>
+    </string-array>
+
+    <string-array name="subscribe_types">
+        <item>passive</item>
+        <item>active</item>
+    </string-array>
 </resources>
