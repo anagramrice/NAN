@@ -140,20 +140,20 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
           String type = sharedPreferences.getString(getResources().getString(R.string.pubType),"unsolicited");
           if (type.equals("unsolicited")){
             pubType = PublishConfig.PUBLISH_TYPE_UNSOLICITED;
-            Log.d("prefs","pubtype: " + type);
+            Log.d("prefs","updated pubtype : " + type );
           } else{
             pubType = PublishConfig.PUBLISH_TYPE_SOLICITED;
-            Log.d("prefs","pubtype: " + type);
+            Log.d("prefs","updated pubtype : " + type );
           }
 
       } else if (key.equals(getString(R.string.subType))) {
           String type = sharedPreferences.getString(getResources().getString(R.string.subType),"passive");
           if (type.equals("passive")){
             subType = SubscribeConfig.SUBSCRIBE_TYPE_PASSIVE;
-            Log.d("prefs","subtype: " + type);
+            Log.d("prefs","updated subtype: " + type);
           } else{
             subType = SubscribeConfig.SUBSCRIBE_TYPE_ACTIVE;
-            Log.d("prefs","subtype: " + type);
+            Log.d("prefs","updated subtype: " + type);
           }
       }
       try {
@@ -189,6 +189,24 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
       if (entry.getKey().equals(getResources().getString(R.string.encryptType))) {
         EncryptType = entry.getValue().toString();
       }
+      if (entry.getKey().equals(getResources().getString(R.string.pubType))) {
+        if (entry.getValue().toString().equals("unsolicited")){
+          pubType = PublishConfig.PUBLISH_TYPE_UNSOLICITED;
+          Log.d("prefs","pubtype unsolict: " + pubType);
+        } else{
+          pubType = PublishConfig.PUBLISH_TYPE_SOLICITED;
+          Log.d("prefs","pubtype solicit: " + pubType);
+        }
+      }
+      if (entry.getKey().equals(getResources().getString(R.string.subType))) {
+        if (entry.getValue().toString().equals("passive")){
+          subType = SubscribeConfig.SUBSCRIBE_TYPE_PASSIVE;
+          Log.d("prefs","updated subtype: " + subType);
+        } else{
+          subType = SubscribeConfig.SUBSCRIBE_TYPE_ACTIVE;
+          Log.d("prefs","updated subtype: " + subType);
+        }
+      }
     }
     try {
       if (EncryptType.equals("pmk")){
@@ -201,6 +219,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     } catch (java.lang.NullPointerException e){
       Log.e("prefs", e.toString());
     }
+
 
     // Register the listener
     sharedPreferences.registerOnSharedPreferenceChangeListener(this);
@@ -754,7 +773,12 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
   private void publishService() {
 
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) { return; }
-    Log.d("nanPUBLISH", "building publish session"+ SERVICE_NAME);
+    Log.d("nanPUBLISH", "building publish session "+ SERVICE_NAME);
+
+    if (pubType==PublishConfig.PUBLISH_TYPE_UNSOLICITED)
+      Log.d("nanPUBLISH", "publish unsolicited "+pubType);
+    else if(pubType==PublishConfig.PUBLISH_TYPE_SOLICITED)
+      Log.d("nanPUBLISH", "publish solicited "+pubType);
 
     PublishConfig config = new PublishConfig.Builder()
         .setServiceName(SERVICE_NAME)
@@ -831,6 +855,12 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) { return; }
     Log.d("nanSUBSCRIBE", "building subscribe session");
+
+    if (subType==SubscribeConfig.SUBSCRIBE_TYPE_ACTIVE)
+      Log.d("nanPUBLISH", "subscribe active ");
+    else if(subType==SubscribeConfig.SUBSCRIBE_TYPE_PASSIVE)
+      Log.d("nanPUBLISH", "subscribe passive ");
+
     SubscribeConfig config = new SubscribeConfig.Builder()
         .setServiceName(SERVICE_NAME)
         .setServiceSpecificInfo(serviceInfo)
