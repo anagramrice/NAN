@@ -1076,14 +1076,17 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             byte[] buffer = new byte[4096];
             int read;
             int totalRead = 0;
+            Uri imageCollection = MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY);
+
             ContentValues values = new ContentValues();
 
             values.put(MediaStore.MediaColumns.DISPLAY_NAME, "nanFile");       //file name
             values.put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4");        //file extension, will automatically add to file
-            values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS );     //end "/" is not mandatory
+            values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DCIM );     //end "/" is not mandatory
 
-            Uri uri = getContentResolver().insert(MediaStore.Files.getContentUri("external"), values);      //important!
-
+            //Uri uri = getContentResolver().insert(MediaStore.Files.getContentUri("external"), values);      //important!
+            Uri uri = getContentResolver().insert(imageCollection, values);      //important!
+            assert uri != null;
             OutputStream fos = getContentResolver().openOutputStream(uri);
             //FileOutputStream fos = new FileOutputStream("/sdcard/Download/newfile");
             Log.d("serverThread", "Socket being written to begin... ");
@@ -1117,6 +1120,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         int bytesRead;
         Socket clientSocket = null;
         int fsize = 1;
+        long fileSizeInBytes = 1;
         InputStream is = null;
         OutputStream outs = null;
         Log.d("clientThread", "thread running socket info "+ serverIP.getHostAddress() + "\t" + serverPort);
@@ -1144,7 +1148,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
               uri = ContentUris.withAppendedId(contentUri, id);
               fsize = cursor.getColumnIndex(OpenableColumns.SIZE);
               File mediaFile = new File(uri.getPath());
-              long fileSizeInBytes = mediaFile.length();
+              fileSizeInBytes = ((cursor.getLong(fsize)));
               Log.d("clientThread", String.valueOf(fileSizeInBytes));
               break;
             }
@@ -1163,9 +1167,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             totalSent += count;
             dos.write(buffer, 0, count);
             if (totalSent%(10240*200)==0) {//every 2MB update status
-                Log.d("clientThread", "total bytes sent:" + totalSent  +"\t"+ fsize);
+                Log.d("clientThread", "total bytes sent:" + totalSent  +"\t"+ fileSizeInBytes);
                 try{
-                  float percent = (float) totalSent/fsize;
+                  float percent = (float) totalSent/fileSizeInBytes;
                   setStatus("percent sent: "+ String.format("%.2f",percent));
                 } catch (Exception e) {
                   Log.e("clientThread",e.toString());
