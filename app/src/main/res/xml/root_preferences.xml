@@ -1,0 +1,49 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory app:title="@string/service">
+
+        <ListPreference
+            android:defaultValue="unsolicited"
+            android:entries="@array/publish_types"
+            android:entryValues="@array/publish_types"
+            android:key="@string/pubType"
+            android:title="@string/pubType"
+            app:useSimpleSummaryProvider="true" />
+        <ListPreference
+            android:defaultValue="passive"
+            android:entries="@array/subscribe_types"
+            android:entryValues="@array/subscribe_types"
+            android:key="@string/subType"
+            android:title="@string/subType"
+            app:useSimpleSummaryProvider="true" />
+        <EditTextPreference
+            app:key="@string/service_name"
+            app:defaultValue="org.wifi.nan.test"
+            app:title="@string/service_name"
+            app:useSimpleSummaryProvider="true" />
+
+        <EditTextPreference
+            app:key="@string/service_specific_info"
+            app:defaultValue="android"
+            app:title="@string/service_specific_info"
+            app:useSimpleSummaryProvider="true" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/security">
+        <ListPreference
+            app:defaultValue="open"
+            app:entries="@array/security_entries"
+            app:key="@string/encryptType"
+            app:title="@string/encryption"
+            app:entryValues="@array/security_values"
+            app:useSimpleSummaryProvider="true" />
+        <EditTextPreference
+            app:key="@string/security_pass"
+            app:title="@string/security_pass"
+            app:useSimpleSummaryProvider="true" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

@@ -2,8 +2,8 @@
   <string name="app_name">NAN</string>
   <string name="action_settings">Settings</string>
   <string name="this_is_the_status">this is the status !!</string>
-  <string name="initiator">Initiator</string>
-  <string name="responder">Responder</string>
+  <string name="initiator">step 4</string>
+  <string name="responder">step 3 req Net</string>
   <string name="publish">Publish</string>
   <string name="subscribe">Subscribe</string>
   <string name="send_file">Send File</string>
@@ -15,4 +15,21 @@
   <string name="messagetosend">MessageToSend</string>
   <string name="messaging">Messaging</string>
   <string name="close">close</string>
+    <string name="title_activity_settings">SettingsActivity</string>
+
+  <!-- Preference Titles -->
+  <string name="service">Service</string>
+  <string name="security">Security</string>
+  <!-- Service Preferences -->
+  <string name="pubType">Publish Type</string>
+  <string name="subType">Subscribe Type</string>
+  <string name="service_name">service_name</string>
+  <string name="service_specific_info">service_specific_info</string>
+  <string name="encryption">encryption</string>
+  <string name="encryptType">encrypt_type</string>
+  <!-- Security Preferences -->
+  <string name="open">open (non-encrypted)</string>
+  <string name="pmk">pairwise master key (byte[] pmk)</string>
+  <string name="psk">pre-shared key (String psk)</string>
+  <string name="security_pass">security_pass</string>
 </resources>
